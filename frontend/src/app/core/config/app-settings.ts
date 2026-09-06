@@ -7,12 +7,12 @@ export interface NavigationItem {
 
 export const appSettings = {
   appName: 'Pedidos360',
-  tenantId: 'REPLACE_WITH_TENANT_ID',
-  clientId: 'REPLACE_WITH_SPA_CLIENT_ID',
-  apiClientId: 'REPLACE_WITH_BFF_CLIENT_ID',
+  tenantId: 'a0937f8c-6713-4912-8198-29b1db9da9a5',
+  clientId: '6a91057e-d0bd-4762-8b34-e63e6ef931e0',
+  apiClientId: '598d6a64-0770-4213-bb07-34601e54499d',
   redirectUri: 'http://localhost:4200',
   postLogoutRedirectUri: 'http://localhost:4200',
   bffApiUrl: 'http://localhost:8080/bff',
-  loginScopes: ['api://REPLACE_WITH_BFF_CLIENT_ID/access_as_user'],
+  loginScopes: ['api://598d6a64-0770-4213-bb07-34601e54499d/access_as_user'],
   featureRoles: ['ADMIN', 'REPARTIDOR', 'CLIENTE'] as const,
 };

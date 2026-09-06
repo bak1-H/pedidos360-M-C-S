@@ -1,0 +1,58 @@
+services:
+  usuarios-service:
+    build:
+      context: .
+      dockerfile: usuarios-service/Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      INTERNAL_TOKEN: dev-local-token
+
+  pedidos-service:
+    build:
+      context: .
+      dockerfile: pedidos-service/Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      INTERNAL_TOKEN: dev-local-token
+
+  envios-service:
+    build:
+      context: .
+      dockerfile: envios-service/Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      INTERNAL_TOKEN: dev-local-token
+
+  bff:
+    build:
+      context: .
+      dockerfile: bff/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      AZURE_TENANT_ID: a0937f8c-6713-4912-8198-29b1db9da9a5
+      AZURE_API_CLIENT_ID: 598d6a64-0770-4213-bb07-34601e54499d
+      USUARIOS_SERVICE_URL: http://usuarios-service:8081
+      PEDIDOS_SERVICE_URL: http://pedidos-service:8082
+      ENVIOS_SERVICE_URL: http://envios-service:8083
+      INTERNAL_TOKEN: dev-local-token
+      CORS_ORIGINS: http://localhost:4200
+    depends_on:
+      - usuarios-service
+      - pedidos-service
+      - envios-service
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "4200:80"
+    depends_on:
+      - bff
