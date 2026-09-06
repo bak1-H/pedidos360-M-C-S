@@ -1,0 +1,154 @@
+<section class="section-frame">
+  <div class="section-head">
+    <div class="stack">
+      <p class="eyebrow">Administración</p>
+      <h2 class="page-title">Gestión general de la operación</h2>
+      <p class="page-copy">
+        Vista sobria para supervisar usuarios, pedidos y crear envíos sin recargar la pantalla con elementos sobrantes.
+      </p>
+    </div>
+
+    <div class="toolbar">
+      <button type="button" class="secondary-button" (click)="cargarDatos()">Refrescar datos</button>
+      <span class="badge badge-success">ADMIN</span>
+    </div>
+  </div>
+
+  <div class="metric-grid">
+    <article class="metric">
+      <span class="metric-label">Usuarios</span>
+      <strong>{{ usuarios().length }}</strong>
+      <small>cuentas activas</small>
+    </article>
+    <article class="metric">
+      <span class="metric-label">Pedidos</span>
+      <strong>{{ pedidos().length }}</strong>
+      <small>en tablero</small>
+    </article>
+    <article class="metric highlight">
+      <span class="metric-label">Envíos</span>
+      <strong>Asignar</strong>
+      <small>crear envío operativo</small>
+    </article>
+  </div>
+</section>
+
+<section class="page-grid">
+  <article class="page-card">
+    <div class="section-head compact">
+      <div class="stack">
+        <p class="eyebrow">Crear envío</p>
+        <h3>Asignación administrativa</h3>
+      </div>
+    </div>
+
+    <form class="form-grid" [formGroup]="envioForm" (ngSubmit)="crearEnvio()">
+      <label class="form-field form-span-2">
+        <span class="field-label">Pedido ID</span>
+        <select class="select" formControlName="pedidoId">
+          <option value="">Selecciona un pedido</option>
+          @for (pedido of pedidos(); track pedido.id) {
+            <option [value]="pedido.id">{{ pedido.id.slice(0, 8) }}... - {{ pedido.estado }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="form-field form-span-2">
+        <span class="field-label">Repartidor ID</span>
+        <select class="select" formControlName="repartidorId">
+          <option value="">Selecciona un repartidor</option>
+          @for (usuario of usuarios(); track usuario.id) {
+            @if (usuario.rol === 'REPARTIDOR' || usuario.rol === 'ADMIN') {
+              <option [value]="usuario.id">{{ usuario.nombre }} - {{ usuario.rol }}</option>
+            }
+          }
+        </select>
+      </label>
+
+      <label class="form-field form-span-2">
+        <span class="field-label">Entrega estimada</span>
+        <input class="input" type="datetime-local" formControlName="fechaEntregaEstimada" />
+      </label>
+
+      <div class="toolbar form-span-2">
+        <button type="submit" class="primary-button" [disabled]="saving()">Crear envío</button>
+      </div>
+    </form>
+
+    @if (feedback()) {
+      <p class="panel-note">{{ feedback() }}</p>
+    }
+  </article>
+
+  <article class="page-card-soft">
+    <div class="section-head compact">
+      <div class="stack">
+        <p class="eyebrow">Responsabilidades</p>
+        <h3>Resumen operacional</h3>
+      </div>
+    </div>
+
+    <ul class="checklist">
+      @for (item of adminChecklist; track item) {
+        <li>{{ item }}</li>
+      }
+    </ul>
+
+    <div class="table-wrap compact">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Usuarios</th>
+            <th>Rol</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (usuario of usuarios().slice(0, 5); track usuario.id) {
+            <tr>
+              <td>{{ usuario.nombre }}</td>
+              <td><span class="badge badge-warning">{{ usuario.rol }}</span></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+
+<section class="section-frame">
+  <div class="section-head compact">
+    <div class="stack">
+      <p class="eyebrow">Pedidos</p>
+      <h3>Pedidos disponibles para asignación</h3>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="empty-state">Cargando datos administrativos...</div>
+  } @else if (pedidos().length) {
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Estado</th>
+            <th>Origen</th>
+            <th>Destino</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (pedido of pedidos(); track pedido.id) {
+            <tr>
+              <td class="mono">{{ pedido.id.slice(0, 8) }}...</td>
+              <td><span class="badge badge-success">{{ pedido.estado }}</span></td>
+              <td>{{ pedido.direccionOrigen }}</td>
+              <td>{{ pedido.direccionDestino }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <div class="empty-state">No hay pedidos cargados.</div>
+  }
+</section>

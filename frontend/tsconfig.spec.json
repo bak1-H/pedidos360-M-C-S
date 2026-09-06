@@ -2,10 +2,14 @@
 /* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
 {
   "extends": "./tsconfig.json",
+  "files": [
+    "src/types.d.ts"
+  ],
   "compilerOptions": {
     "types": [
       "vitest/globals"
-    ]
+    ],
+    "importHelpers": false
   },
   "include": [
     "src/**/*.d.ts",

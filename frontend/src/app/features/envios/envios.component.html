@@ -1,0 +1,136 @@
+<section class="section-frame">
+  <div class="section-head">
+    <div class="stack">
+      <p class="eyebrow">Envios</p>
+      <h2 class="page-title">Monitoreo de salidas, rutas y estados</h2>
+      <p class="page-copy">
+        Diseñado para leer la operación como una línea de despacho: simple, sobria y enfocada en el estado de cada envío.
+      </p>
+    </div>
+
+    <div class="toolbar">
+      <button type="button" class="secondary-button" (click)="cargarEnvios()">Refrescar envíos</button>
+      <span class="badge">{{ canViewOwnEnvios() ? 'Mis envíos' : 'Panel de gestión' }}</span>
+    </div>
+  </div>
+
+  <div class="chip-row">
+    @for (status of statusList; track status) {
+      <span class="chip">{{ status }}</span>
+    }
+  </div>
+</section>
+
+<section class="page-grid">
+  <article class="page-card">
+    <div class="section-head compact">
+      <div class="stack">
+        <p class="eyebrow">Acciones</p>
+        <h3>Actualizar estado</h3>
+      </div>
+    </div>
+
+    <form class="form-grid" [formGroup]="cambioEstadoForm" (ngSubmit)="cambiarEstado()">
+      <label class="form-field form-span-2">
+        <span class="field-label">ID del envío</span>
+        <input class="input mono" formControlName="envioId" placeholder="uuid del envío" />
+      </label>
+
+      <label class="form-field">
+        <span class="field-label">Estado</span>
+        <select class="select" formControlName="estadoEnvio">
+          <option value="PENDIENTE">PENDIENTE</option>
+          <option value="EN_TRANSITO">EN_TRANSITO</option>
+          <option value="ENTREGADO">ENTREGADO</option>
+          <option value="FALLIDO">FALLIDO</option>
+        </select>
+      </label>
+
+      <label class="form-field">
+        <span class="field-label">Evento</span>
+        <input class="input" formControlName="descripcionEvento" placeholder="Salió a reparto / entregado / fallido" />
+      </label>
+
+      <div class="toolbar form-span-2">
+        <button type="submit" class="primary-button" [disabled]="saving()">
+          {{ saving() ? 'Actualizando...' : 'Actualizar estado' }}
+        </button>
+      </div>
+    </form>
+
+    @if (feedback()) {
+      <p class="panel-note">{{ feedback() }}</p>
+    }
+  </article>
+
+  <article class="page-card-soft">
+    <div class="section-head compact">
+      <div class="stack">
+        <p class="eyebrow">Listado</p>
+        <h3>Envios asignados</h3>
+      </div>
+      <span class="badge">{{ envios().length }} items</span>
+    </div>
+
+    @if (loading()) {
+      <div class="empty-state">Cargando envíos...</div>
+    } @else if (envios().length) {
+      <div class="stack-grid">
+        @for (envio of envios(); track envio.id) {
+          <article class="route-card">
+            <div class="section-head compact">
+              <div class="stack">
+                <p class="eyebrow">{{ envio.estadoEnvio }}</p>
+                <h4 class="mono">{{ envio.id.slice(0, 8) }}...</h4>
+              </div>
+              <span class="badge badge-warning">Pedido {{ envio.pedidoId.slice(0, 8) }}...</span>
+            </div>
+
+            <p>Repartidor: <span class="mono">{{ envio.repartidorId ?? 'Sin asignar' }}</span></p>
+            <p>Asignación: {{ envio.fechaAsignacion ?? 'Pendiente' }}</p>
+            <p>Entrega: {{ envio.fechaEntregaEstimada ?? 'Sin estimar' }}</p>
+
+            <div class="toolbar">
+              <button type="button" class="inline-button" (click)="seleccionarEnvio(envio)">Usar en formulario</button>
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <div class="empty-state">
+        <strong>No hay envíos para mostrar.</strong>
+        <p>Si eres repartidor, aquí aparecerán los envíos asignados. Si eres admin, usa el formulario de creación.</p>
+      </div>
+    }
+  </article>
+</section>
+
+<section class="section-frame">
+  <div class="section-head">
+    <div class="stack">
+      <p class="eyebrow">Creación</p>
+      <h3>Asignar nuevo envío</h3>
+    </div>
+  </div>
+
+  <form class="form-grid" [formGroup]="crearEnvioForm" (ngSubmit)="crearEnvio()">
+    <label class="form-field">
+      <span class="field-label">Pedido ID</span>
+      <input class="input mono" formControlName="pedidoId" placeholder="uuid del pedido" />
+    </label>
+
+    <label class="form-field">
+      <span class="field-label">Repartidor ID</span>
+      <input class="input mono" formControlName="repartidorId" placeholder="uuid del repartidor" />
+    </label>
+
+    <label class="form-field form-span-2">
+      <span class="field-label">Entrega estimada</span>
+      <input class="input" type="datetime-local" formControlName="fechaEntregaEstimada" />
+    </label>
+
+    <div class="toolbar form-span-2">
+      <button type="submit" class="primary-button" [disabled]="saving()">Crear envío</button>
+    </div>
+  </form>
+</section>

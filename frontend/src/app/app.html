@@ -1,4 +1,99 @@
-<main>
-  <h1>{{ title() }}</h1>
-  <router-outlet />
-</main>
+<div class="app-shell">
+  <div class="ambient ambient-left"></div>
+  <div class="ambient ambient-right"></div>
+
+  <header class="shell-header">
+    <section class="brand-panel surface">
+      <p class="eyebrow">Centro de envios y trazabilidad</p>
+      <h1>{{ appName }}</h1>
+      <p class="lede">
+        Una consola sobria para seguimiento de despachos, movimientos de reparto y operaciones de última milla.
+      </p>
+
+      <div class="chip-row">
+        <span class="chip">Despachos</span>
+        <span class="chip">Trazabilidad</span>
+        <span class="chip">Operacion</span>
+      </div>
+
+      <div class="stats-strip">
+        <article class="stat-card">
+          <span class="stat-label">Rutas activas</span>
+          <strong>24</strong>
+          <small>seguimiento continuo</small>
+        </article>
+        <article class="stat-card highlight">
+          <span class="stat-label">Entregas hoy</span>
+          <strong>128</strong>
+          <small>despachos en progreso</small>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Alertas</span>
+          <strong>03</strong>
+          <small>pendientes de revisión</small>
+        </article>
+      </div>
+    </section>
+
+    <aside class="session-panel surface">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Sesion</p>
+          <h2>{{ auth.displayName() }}</h2>
+        </div>
+        <span class="status-pill" [class.active]="auth.isAuthenticated()">
+          {{ auth.isAuthenticated() ? 'Conectado' : 'Pendiente' }}
+        </span>
+      </div>
+
+      <p class="panel-copy">{{ auth.email() }}</p>
+
+      <div class="role-row">
+        @for (role of auth.roles(); track role) {
+          <span class="role-tag">{{ role }}</span>
+        } @empty {
+          <span class="role-tag muted">Sin roles</span>
+        }
+      </div>
+
+      <p class="panel-note">{{ auth.lastMessage() }}</p>
+
+      <div class="button-row">
+        @if (!auth.isAuthenticated()) {
+          <button type="button" class="primary-button" (click)="loginPopup()">Login popup</button>
+          <button type="button" class="secondary-button" (click)="loginRedirect()">Login redirect</button>
+        } @else {
+          <button type="button" class="primary-button" (click)="refreshSession()">Renovar sesion</button>
+          <button type="button" class="secondary-button" (click)="logout()">Logout</button>
+        }
+      </div>
+
+      <p class="refresh-state">Estado de token: {{ auth.refreshState() }}</p>
+    </aside>
+  </header>
+
+  <nav class="shell-nav surface">
+    @for (item of visibleNavigation(); track item.path) {
+      <a
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+      >
+        {{ item.label }}
+      </a>
+    }
+  </nav>
+
+  <section class="highlight-grid">
+    @for (highlight of roleHighlights; track highlight.label) {
+      <article class="surface highlight-card">
+        <p class="eyebrow">{{ highlight.label }}</p>
+        <p>{{ highlight.detail }}</p>
+      </article>
+    }
+  </section>
+
+  <main class="workspace">
+    <router-outlet />
+  </main>
+</div>

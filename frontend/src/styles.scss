@@ -1,1 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root {
+	color-scheme: light;
+	--bg: #eef1ed;
+	--bg-soft: #dfe6df;
+	--surface: rgba(18, 28, 22, 0.72);
+	--surface-strong: #15211b;
+	--surface-light: rgba(255, 255, 255, 0.76);
+	--text: #f4f6f2;
+	--text-dark: #1f2b24;
+	--muted: #98a39a;
+	--border: rgba(255, 255, 255, 0.08);
+	--accent: #d97706;
+	--accent-strong: #f59e0b;
+	--accent-soft: rgba(217, 119, 6, 0.12);
+	--warning: #d97706;
+	--shadow: 0 24px 70px rgba(10, 15, 12, 0.18);
+}
+
+html {
+	min-height: 100%;
+	background:
+		radial-gradient(circle at top left, rgba(15, 78, 54, 0.4), transparent 30%),
+		radial-gradient(circle at top right, rgba(217, 119, 6, 0.16), transparent 24%),
+		linear-gradient(180deg, #f2f4f1 0%, #e4ebe4 100%);
+}
+
+html,
+body {
+	margin: 0;
+	min-height: 100%;
+}
+
+body {
+	font-family: 'Manrope', 'Segoe UI', sans-serif;
+	color: var(--text-dark);
+	background: transparent;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+	font: inherit;
+}
 /* You can add global styles to this file, and also import other style files */
