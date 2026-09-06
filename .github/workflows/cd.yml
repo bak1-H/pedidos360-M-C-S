@@ -23,6 +23,20 @@ jobs:
       - name: Empaquetar servicios
         run: ./mvnw --batch-mode clean package -DskipTests
 
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Compilar y empaquetar frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build -- --configuration aws
+          tar -czf ../frontend.tar.gz -C dist/frontend/browser .
+
       - name: Configurar credenciales AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -31,11 +45,12 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
 
-      - name: Subir jars a S3
+      - name: Subir artefactos a S3
         run: |
           for svc in bff usuarios-service pedidos-service envios-service; do
             aws s3 cp "$svc/target/$svc-1.0.0.jar" "s3://${{ secrets.S3_BUCKET }}/$svc.jar"
           done
+          aws s3 cp frontend.tar.gz "s3://${{ secrets.S3_BUCKET }}/frontend.tar.gz"
 
       - name: Reiniciar servicios en EC2
         run: |
@@ -48,7 +63,11 @@ jobs:
               "for svc in bff usuarios-service pedidos-service envios-service; do aws s3 cp s3://${{ secrets.S3_BUCKET }}/$svc.jar /opt/pedidos360/$svc.jar; done",
               "systemctl restart usuarios-service pedidos-service envios-service",
               "sleep 30",
-              "systemctl restart bff"
+              "systemctl restart bff",
+              "aws s3 cp s3://${{ secrets.S3_BUCKET }}/frontend.tar.gz /tmp/frontend.tar.gz",
+              "tar -xzf /tmp/frontend.tar.gz -C /usr/share/nginx/html",
+              "find /usr/share/nginx/html -maxdepth 1 -name chunk-*.js -mtime +7 -delete",
+              "systemctl reload nginx"
             ]' \
             --query "Command.CommandId" --output text)
 

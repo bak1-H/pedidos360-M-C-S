@@ -59,9 +59,9 @@ done
 sleep 45
 systemctl enable --now bff
 
-rm -rf /usr/share/nginx/html/*
 aws s3 cp "s3://__BUCKET__/frontend.tar.gz" /tmp/frontend.tar.gz
 tar -xzf /tmp/frontend.tar.gz -C /usr/share/nginx/html
+find /usr/share/nginx/html -maxdepth 1 -name 'chunk-*.js' -mtime +7 -delete
 aws s3 cp "s3://__BUCKET__/pedidos360-nginx.conf" /etc/nginx/conf.d/pedidos360.conf
 nginx -t
 systemctl enable --now nginx
