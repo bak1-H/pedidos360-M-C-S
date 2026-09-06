@@ -8,7 +8,6 @@ export interface PerfilResponse {
   azureAdObjectId: string;
   nombre: string;
   email: string;
-  rol: string;
   roles: string[];
   recienCreado: boolean;
 }
@@ -119,10 +118,6 @@ export class BffService {
 
   crearEnvio(request: EnvioRequestDto): Observable<EnvioResponseDto> {
     return this.http.post<EnvioResponseDto>(`${this.baseUrl}/envios`, request);
-  }
-
-  obtenerEnvios(): Observable<EnvioResponseDto[]> {
-    return this.http.get<EnvioResponseDto[]>(`${this.baseUrl}/envios`);
   }
 
   obtenerMisEnvios(): Observable<EnvioResponseDto[]> {

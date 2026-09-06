@@ -17,7 +17,7 @@ export const routes: Routes = [
 	{
 		path: 'envios',
 		canActivate: [MsalGuard, roleGuard],
-		data: { roles: ['REPARTIDOR', 'ADMIN'] },
+		data: { roles: ['REPARTIDOR'] },
 		loadComponent: () => import('./features/envios/envios.component').then((module) => module.EnviosComponent),
 	},
 	{

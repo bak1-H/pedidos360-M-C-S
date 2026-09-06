@@ -2,135 +2,129 @@
   <div class="section-head">
     <div class="stack">
       <p class="eyebrow">Envios</p>
-      <h2 class="page-title">Monitoreo de salidas, rutas y estados</h2>
+      <h2 class="page-title">Entregas asignadas a ti</h2>
       <p class="page-copy">
-        Diseñado para leer la operación como una línea de despacho: simple, sobria y enfocada en el estado de cada envío.
+        Revisa las entregas que tienes en ruta y actualiza su estado a medida que avanzas.
       </p>
     </div>
 
     <div class="toolbar">
-      <button type="button" class="secondary-button" (click)="cargarEnvios()">Refrescar envíos</button>
-      <span class="badge">{{ canViewOwnEnvios() ? 'Mis envíos' : 'Panel de gestión' }}</span>
+      <button type="button" class="secondary-button" (click)="cargarEnvios()" [disabled]="loading()">
+        {{ loading() ? 'Actualizando...' : 'Actualizar' }}
+      </button>
     </div>
   </div>
 
-  <div class="chip-row">
-    @for (status of statusList; track status) {
-      <span class="chip">{{ status }}</span>
-    }
+  <div class="metric-grid">
+    <article class="metric">
+      <span class="metric-label">Asignados</span>
+      <strong>{{ envios().length }}</strong>
+      <small>en total</small>
+    </article>
+    <article class="metric highlight">
+      <span class="metric-label">En transito</span>
+      <strong>{{ enTransito() }}</strong>
+      <small>en ruta ahora</small>
+    </article>
+    <article class="metric">
+      <span class="metric-label">Entregados</span>
+      <strong>{{ entregados() }}</strong>
+      <small>completados</small>
+    </article>
   </div>
 </section>
 
-<section class="page-grid">
-  <article class="page-card">
+@if (envioSeleccionado(); as envio) {
+  <section class="page-card">
     <div class="section-head compact">
       <div class="stack">
-        <p class="eyebrow">Acciones</p>
-        <h3>Actualizar estado</h3>
+        <p class="eyebrow">Actualizar entrega {{ referencia(envio.id) }}</p>
+        <h3>Pedido {{ referencia(envio.pedidoId) }}</h3>
       </div>
+      <span class="badge badge-warning">{{ estadoLegible(envio.estadoEnvio) }}</span>
     </div>
 
-    <form class="form-grid" [formGroup]="cambioEstadoForm" (ngSubmit)="cambiarEstado()">
-      <label class="form-field form-span-2">
-        <span class="field-label">ID del envío</span>
-        <input class="input mono" formControlName="envioId" placeholder="uuid del envío" />
-      </label>
-
+    <form class="form-grid" [formGroup]="cambioEstadoForm" (ngSubmit)="guardarEstado()">
       <label class="form-field">
-        <span class="field-label">Estado</span>
+        <span class="field-label">Nuevo estado</span>
         <select class="select" formControlName="estadoEnvio">
-          <option value="PENDIENTE">PENDIENTE</option>
-          <option value="EN_TRANSITO">EN_TRANSITO</option>
-          <option value="ENTREGADO">ENTREGADO</option>
-          <option value="FALLIDO">FALLIDO</option>
+          @for (estado of estados; track estado.valor) {
+            <option [value]="estado.valor">{{ estado.etiqueta }}</option>
+          }
         </select>
       </label>
 
       <label class="form-field">
-        <span class="field-label">Evento</span>
-        <input class="input" formControlName="descripcionEvento" placeholder="Salió a reparto / entregado / fallido" />
+        <span class="field-label">Que paso</span>
+        <input
+          class="input"
+          formControlName="descripcionEvento"
+          placeholder="Ej: entregado en conserjeria"
+        />
       </label>
 
       <div class="toolbar form-span-2">
         <button type="submit" class="primary-button" [disabled]="saving()">
-          {{ saving() ? 'Actualizando...' : 'Actualizar estado' }}
+          {{ saving() ? 'Guardando...' : 'Guardar estado' }}
         </button>
+        <button type="button" class="secondary-button" (click)="cancelarSeleccion()">Cancelar</button>
       </div>
     </form>
-
-    @if (feedback()) {
-      <p class="panel-note">{{ feedback() }}</p>
-    }
-  </article>
-
-  <article class="page-card-soft">
-    <div class="section-head compact">
-      <div class="stack">
-        <p class="eyebrow">Listado</p>
-        <h3>Envios asignados</h3>
-      </div>
-      <span class="badge">{{ envios().length }} items</span>
-    </div>
-
-    @if (loading()) {
-      <div class="empty-state">Cargando envíos...</div>
-    } @else if (envios().length) {
-      <div class="stack-grid">
-        @for (envio of envios(); track envio.id) {
-          <article class="route-card">
-            <div class="section-head compact">
-              <div class="stack">
-                <p class="eyebrow">{{ envio.estadoEnvio }}</p>
-                <h4 class="mono">{{ envio.id.slice(0, 8) }}...</h4>
-              </div>
-              <span class="badge badge-warning">Pedido {{ envio.pedidoId.slice(0, 8) }}...</span>
-            </div>
-
-            <p>Repartidor: <span class="mono">{{ envio.repartidorId ?? 'Sin asignar' }}</span></p>
-            <p>Asignación: {{ envio.fechaAsignacion ?? 'Pendiente' }}</p>
-            <p>Entrega: {{ envio.fechaEntregaEstimada ?? 'Sin estimar' }}</p>
-
-            <div class="toolbar">
-              <button type="button" class="inline-button" (click)="seleccionarEnvio(envio)">Usar en formulario</button>
-            </div>
-          </article>
-        }
-      </div>
-    } @else {
-      <div class="empty-state">
-        <strong>No hay envíos para mostrar.</strong>
-        <p>Si eres repartidor, aquí aparecerán los envíos asignados. Si eres admin, usa el formulario de creación.</p>
-      </div>
-    }
-  </article>
-</section>
+  </section>
+}
 
 <section class="section-frame">
-  <div class="section-head">
+  <div class="section-head compact">
     <div class="stack">
-      <p class="eyebrow">Creación</p>
-      <h3>Asignar nuevo envío</h3>
+      <p class="eyebrow">Listado</p>
+      <h3>Tus entregas</h3>
     </div>
+    <span class="badge">{{ envios().length }} envios</span>
   </div>
 
-  <form class="form-grid" [formGroup]="crearEnvioForm" (ngSubmit)="crearEnvio()">
-    <label class="form-field">
-      <span class="field-label">Pedido ID</span>
-      <input class="input mono" formControlName="pedidoId" placeholder="uuid del pedido" />
-    </label>
+  @if (feedback()) {
+    <p class="panel-note">{{ feedback() }}</p>
+  }
 
-    <label class="form-field">
-      <span class="field-label">Repartidor ID</span>
-      <input class="input mono" formControlName="repartidorId" placeholder="uuid del repartidor" />
-    </label>
+  @if (error()) {
+    <p class="panel-note error">{{ error() }}</p>
+  }
 
-    <label class="form-field form-span-2">
-      <span class="field-label">Entrega estimada</span>
-      <input class="input" type="datetime-local" formControlName="fechaEntregaEstimada" />
-    </label>
-
-    <div class="toolbar form-span-2">
-      <button type="submit" class="primary-button" [disabled]="saving()">Crear envío</button>
+  @if (loading()) {
+    <div class="empty-state">Cargando tus entregas...</div>
+  } @else if (envios().length) {
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Entrega</th>
+            <th>Pedido</th>
+            <th>Estado</th>
+            <th>Entrega estimada</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (envio of envios(); track envio.id) {
+            <tr>
+              <td>{{ referencia(envio.id) }}</td>
+              <td>{{ referencia(envio.pedidoId) }}</td>
+              <td><span class="badge badge-warning">{{ estadoLegible(envio.estadoEnvio) }}</span></td>
+              <td>{{ fecha(envio.fechaEntregaEstimada, 'Sin estimar') }}</td>
+              <td>
+                <button type="button" class="inline-button" (click)="seleccionarEnvio(envio)">
+                  Actualizar estado
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
-  </form>
+  } @else {
+    <div class="empty-state">
+      <strong>No tienes entregas asignadas.</strong>
+      <p>Cuando un administrador te asigne un envio, aparecera en esta lista.</p>
+    </div>
+  }
 </section>

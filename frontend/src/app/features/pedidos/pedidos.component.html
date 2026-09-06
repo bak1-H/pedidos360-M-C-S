@@ -2,114 +2,130 @@
   <div class="section-head">
     <div class="stack">
       <p class="eyebrow">Pedidos</p>
-      <h2 class="page-title">Registro de paquetes y solicitudes</h2>
+      <h2 class="page-title">{{ isAdmin() ? 'Todos los pedidos' : 'Mis pedidos' }}</h2>
       <p class="page-copy">
-        Crea pedidos con su detalle y su paquete, y consulta el tracking consolidado desde el mismo tablero.
+        {{ isAdmin()
+          ? 'Revisa los pedidos de toda la operacion y abre el seguimiento de cada uno.'
+          : 'Crea un pedido nuevo y sigue el estado de tus envios en curso.' }}
       </p>
     </div>
 
     <div class="toolbar">
-      <button type="button" class="secondary-button" (click)="cargarPedidos()">Refrescar pedidos</button>
-      <span class="badge" [class.badge-success]="isAdmin()" [class.badge-warning]="!isAdmin()">
-        {{ isAdmin() ? 'Vista admin' : 'Vista cliente' }}
-      </span>
+      <button type="button" class="secondary-button" (click)="cargarPedidos()" [disabled]="loading()">
+        {{ loading() ? 'Actualizando...' : 'Actualizar' }}
+      </button>
     </div>
   </div>
 
-  <div class="card-grid compact-grid">
-    @for (card of serviceCards; track card) {
-      <article class="route-card">
-        <p class="eyebrow">Flujo</p>
-        <h3>{{ card }}</h3>
-      </article>
-    }
+  <div class="metric-grid">
+    <article class="metric">
+      <span class="metric-label">Total</span>
+      <strong>{{ pedidos().length }}</strong>
+      <small>pedidos</small>
+    </article>
+    <article class="metric highlight">
+      <span class="metric-label">En camino</span>
+      <strong>{{ enCamino() }}</strong>
+      <small>despachados</small>
+    </article>
+    <article class="metric">
+      <span class="metric-label">Entregados</span>
+      <strong>{{ entregados() }}</strong>
+      <small>completados</small>
+    </article>
   </div>
 </section>
 
 <section class="page-grid">
-  <article class="page-card">
-    <div class="section-head compact">
-      <div class="stack">
-        <p class="eyebrow">Nuevo pedido</p>
-        <h3>Completa la información base</h3>
+  @if (puedeCrear()) {
+    <article class="page-card">
+      <div class="section-head compact">
+        <div class="stack">
+          <p class="eyebrow">Nuevo pedido</p>
+          <h3>Que quieres enviar</h3>
+        </div>
       </div>
-    </div>
 
-    <form class="form-grid" [formGroup]="pedidoForm" (ngSubmit)="crearPedido()">
-      <label class="form-field">
-        <span class="field-label">Origen</span>
-        <input class="input" formControlName="direccionOrigen" placeholder="Calle y ciudad de origen" />
-      </label>
+      <form class="form-grid" [formGroup]="pedidoForm" (ngSubmit)="crearPedido()">
+        <label class="form-field">
+          <span class="field-label">Retiro en</span>
+          <input class="input" formControlName="direccionOrigen" placeholder="Calle, numero y comuna" />
+        </label>
 
-      <label class="form-field">
-        <span class="field-label">Destino</span>
-        <input class="input" formControlName="direccionDestino" placeholder="Calle y ciudad de destino" />
-      </label>
+        <label class="form-field">
+          <span class="field-label">Entrega en</span>
+          <input class="input" formControlName="direccionDestino" placeholder="Calle, numero y comuna" />
+        </label>
 
-      <label class="form-field form-span-2">
-        <span class="field-label">Descripción</span>
-        <textarea class="textarea" formControlName="descripcion" rows="3" placeholder="Describe el contenido del envío"></textarea>
-      </label>
+        <label class="form-field form-span-2">
+          <span class="field-label">Contenido</span>
+          <input class="input" formControlName="descripcion" placeholder="Ej: notebook en su caja original" />
+        </label>
 
-      <label class="form-field">
-        <span class="field-label">Cantidad</span>
-        <input class="input" type="number" formControlName="cantidad" min="1" />
-      </label>
+        <label class="form-field">
+          <span class="field-label">Cantidad</span>
+          <input class="input" type="number" formControlName="cantidad" min="1" />
+        </label>
 
-      <label class="form-field">
-        <span class="field-label">Valor declarado</span>
-        <input class="input" type="number" formControlName="valorDeclarado" min="0" />
-      </label>
+        <label class="form-field">
+          <span class="field-label">Valor declarado</span>
+          <input class="input" type="number" formControlName="valorDeclarado" min="0" step="1000" />
+        </label>
 
-      <label class="form-field">
-        <span class="field-label">Peso Kg</span>
-        <input class="input" type="number" formControlName="pesoKg" min="0.1" step="0.1" />
-      </label>
+        <label class="form-field">
+          <span class="field-label">Tipo de paquete</span>
+          <select class="select" formControlName="tipoPaquete">
+            @for (tipo of tiposPaquete; track tipo.valor) {
+              <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
+            }
+          </select>
+        </label>
 
-      <label class="form-field">
-        <span class="field-label">Tipo</span>
-        <select class="select" formControlName="tipoPaquete">
-          <option value="DOCUMENTO">DOCUMENTO</option>
-          <option value="CAJA">CAJA</option>
-          <option value="FRAGIL">FRAGIL</option>
-        </select>
-      </label>
+        <label class="form-field">
+          <span class="field-label">Peso (kg)</span>
+          <input class="input" type="number" formControlName="pesoKg" min="0.1" step="0.1" />
+        </label>
 
-      <label class="form-field">
-        <span class="field-label">Altura cm</span>
-        <input class="input" type="number" formControlName="alturaCm" min="1" />
-      </label>
+        <label class="form-field">
+          <span class="field-label">Alto (cm)</span>
+          <input class="input" type="number" formControlName="alturaCm" min="1" />
+        </label>
 
-      <label class="form-field">
-        <span class="field-label">Ancho cm</span>
-        <input class="input" type="number" formControlName="anchoCm" min="1" />
-      </label>
+        <label class="form-field">
+          <span class="field-label">Ancho (cm)</span>
+          <input class="input" type="number" formControlName="anchoCm" min="1" />
+        </label>
 
-      <label class="form-field">
-        <span class="field-label">Largo cm</span>
-        <input class="input" type="number" formControlName="largoCm" min="1" />
-      </label>
+        <label class="form-field">
+          <span class="field-label">Largo (cm)</span>
+          <input class="input" type="number" formControlName="largoCm" min="1" />
+        </label>
 
-      <div class="toolbar form-span-2">
-        <button type="submit" class="primary-button" [disabled]="submitting()">
-          {{ submitting() ? 'Creando...' : 'Crear pedido' }}
-        </button>
-      </div>
-    </form>
+        <div class="toolbar form-span-2">
+          <button type="submit" class="primary-button" [disabled]="submitting()">
+            {{ submitting() ? 'Creando...' : 'Crear pedido' }}
+          </button>
+        </div>
+      </form>
 
-    @if (feedback()) {
-      <p class="panel-note" [class.error]="feedback().includes('No se pudo')">{{ feedback() }}</p>
-    }
-  </article>
+      @if (feedback()) {
+        <p class="panel-note">{{ feedback() }}</p>
+      }
+    </article>
+  }
 
   <article class="page-card-soft">
     <div class="section-head compact">
       <div class="stack">
         <p class="eyebrow">Listado</p>
-        <h3>Pedidos disponibles</h3>
+        <h3>Estado de cada pedido</h3>
       </div>
-      <span class="badge">{{ pedidos().length }} items</span>
+      <span class="badge">{{ pedidos().length }}</span>
     </div>
+
+    @if (error()) {
+      <p class="panel-note error">{{ error() }}</p>
+    }
 
     @if (loading()) {
       <div class="empty-state">Cargando pedidos...</div>
@@ -118,22 +134,22 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>ID</th>
+              <th>Pedido</th>
               <th>Estado</th>
-              <th>Origen</th>
-              <th>Destino</th>
+              <th>Ruta</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             @for (pedido of pedidos(); track pedido.id) {
               <tr>
-                <td class="mono">{{ pedido.id.slice(0, 8) }}...</td>
-                <td><span class="badge badge-success">{{ pedido.estado }}</span></td>
-                <td>{{ pedido.direccionOrigen }}</td>
-                <td>{{ pedido.direccionDestino }}</td>
+                <td>{{ referencia(pedido.id) }}</td>
+                <td><span class="badge badge-success">{{ estadoLegible(pedido.estado) }}</span></td>
+                <td>{{ pedido.direccionOrigen }} → {{ pedido.direccionDestino }}</td>
                 <td>
-                  <button type="button" class="inline-button" (click)="verDetalle(pedido.id)">Ver detalle</button>
+                  <button type="button" class="inline-button" (click)="verDetalle(pedido.id)">
+                    Ver seguimiento
+                  </button>
                 </td>
               </tr>
             }
@@ -142,69 +158,45 @@
       </div>
     } @else {
       <div class="empty-state">
-        <strong>No hay pedidos para mostrar.</strong>
-        <p>Cuando el backend responda, los pedidos aparecerán aquí con su estado y seguimiento.</p>
+        <strong>Todavia no tienes pedidos.</strong>
+        <p>Crea el primero con el formulario y aparecera aqui con su estado.</p>
       </div>
     }
   </article>
 </section>
 
-<section class="section-frame">
-  <div class="section-head compact">
-    <div class="stack">
-      <p class="eyebrow">Tracking</p>
-      <h3>Detalle consolidado del pedido</h3>
+@if (selectedPedido(); as detalle) {
+  <section class="section-frame">
+    <div class="section-head compact">
+      <div class="stack">
+        <p class="eyebrow">Seguimiento {{ referencia(detalle.pedido.id) }}</p>
+        <h3>{{ detalle.pedido.direccionOrigen }} → {{ detalle.pedido.direccionDestino }}</h3>
+      </div>
+      <button type="button" class="secondary-button" (click)="cerrarDetalle()">Cerrar</button>
     </div>
-  </div>
 
-  @if (selectedPedido()) {
     <div class="page-grid details-grid">
       <article class="page-card-soft">
         <p class="field-label">Pedido</p>
-        <h4 class="mono">{{ selectedPedido()?.pedido.id }}</h4>
-        <p>Estado: <span class="badge badge-success">{{ selectedPedido()?.pedido.estado }}</span></p>
-        <p>Origen: {{ selectedPedido()?.pedido.direccionOrigen }}</p>
-        <p>Destino: {{ selectedPedido()?.pedido.direccionDestino }}</p>
+        <p>Estado: <span class="badge badge-success">{{ estadoLegible(detalle.pedido.estado) }}</span></p>
+        <p>Creado: {{ fecha(detalle.pedido.fechaCreacion) }}</p>
+        <p>Contenido: {{ detalle.pedido.detalles[0].descripcion }} (x{{ detalle.pedido.detalles[0].cantidad }})</p>
+        <p>
+          Paquete: {{ detalle.pedido.paquete.pesoKg }} kg ·
+          {{ detalle.pedido.paquete.alturaCm }}x{{ detalle.pedido.paquete.anchoCm }}x{{ detalle.pedido.paquete.largoCm }} cm
+        </p>
       </article>
 
       <article class="page-card-soft">
-        <p class="field-label">Paquete</p>
-        <p>Tipo: {{ selectedPedido()?.pedido.paquete.tipo }}</p>
-        <p>Peso: {{ selectedPedido()?.pedido.paquete.pesoKg }} kg</p>
-        <p>Medidas: {{ selectedPedido()?.pedido.paquete.alturaCm }} x {{ selectedPedido()?.pedido.paquete.anchoCm }} x {{ selectedPedido()?.pedido.paquete.largoCm }} cm</p>
+        <p class="field-label">Entrega</p>
+        @if (detalle.envio; as envio) {
+          <p>Estado: <span class="badge badge-warning">{{ estadoLegible(envio.estadoEnvio) }}</span></p>
+          <p>Asignado: {{ fecha(envio.fechaAsignacion, 'Pendiente') }}</p>
+          <p>Entrega estimada: {{ fecha(envio.fechaEntregaEstimada, 'Sin estimar') }}</p>
+        } @else {
+          <p>Este pedido todavia no tiene un repartidor asignado.</p>
+        }
       </article>
     </div>
-
-    @if (selectedPedido()?.envio) {
-      <article class="page-card-soft compact">
-        <p class="field-label">Envío asociado</p>
-        <div class="profile-grid">
-          <div>
-            <span class="field-label">Estado</span>
-            <p class="badge badge-warning">{{ selectedPedido()?.envio?.estadoEnvio }}</p>
-          </div>
-          <div>
-            <span class="field-label">Repartidor</span>
-            <p class="mono">{{ selectedPedido()?.envio?.repartidorId }}</p>
-          </div>
-          <div>
-            <span class="field-label">Asignación</span>
-            <p>{{ selectedPedido()?.envio?.fechaAsignacion ?? 'Pendiente' }}</p>
-          </div>
-          <div>
-            <span class="field-label">Entrega estimada</span>
-            <p>{{ selectedPedido()?.envio?.fechaEntregaEstimada ?? 'Sin definir' }}</p>
-          </div>
-        </div>
-      </article>
-    } @else {
-      <div class="empty-state">
-        <strong>Aún no existe un envío para este pedido.</strong>
-      </div>
-    }
-  } @else {
-    <div class="empty-state">
-      <strong>Selecciona un pedido para ver su tracking.</strong>
-    </div>
-  }
-</section>
+  </section>
+}

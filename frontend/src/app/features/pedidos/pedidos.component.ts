@@ -1,5 +1,4 @@
-import { Component, effect, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
@@ -9,11 +8,12 @@ import {
   PedidoConTrackingResponse,
   PedidoResponseDto,
 } from '../../core/services/bff.service';
+import { etiquetaEstado, fechaLegible, referenciaCorta } from '../../shared/referencia';
 
 @Component({
   selector: 'app-pedidos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   templateUrl: './pedidos.component.html',
 })
 export class PedidosComponent {
@@ -26,8 +26,23 @@ export class PedidosComponent {
   protected readonly loading = signal(false);
   protected readonly submitting = signal(false);
   protected readonly feedback = signal('');
+  protected readonly error = signal('');
 
   protected readonly isAdmin = () => this.auth.hasAnyRole(['ADMIN']);
+  protected readonly puedeCrear = () => this.auth.hasAnyRole(['CLIENTE']);
+
+  protected readonly enCamino = computed(
+    () => this.pedidos().filter((pedido) => pedido.estado === 'DESPACHADO').length,
+  );
+  protected readonly entregados = computed(
+    () => this.pedidos().filter((pedido) => pedido.estado === 'ENTREGADO').length,
+  );
+
+  protected readonly tiposPaquete = [
+    { valor: 'DOCUMENTO', etiqueta: 'Documento' },
+    { valor: 'CAJA', etiqueta: 'Caja' },
+    { valor: 'FRAGIL', etiqueta: 'Fragil' },
+  ];
 
   protected readonly pedidoForm = this.fb.nonNullable.group({
     direccionOrigen: ['', [Validators.required, Validators.minLength(5)]],
@@ -42,27 +57,22 @@ export class PedidosComponent {
     tipoPaquete: ['CAJA', [Validators.required]],
   });
 
-  protected readonly serviceCards = [
-    'Crear pedido con detalle y paquete',
-    'Ver mis pedidos o el tablero completo si eres admin',
-    'Abrir tracking consolidado por pedido',
-  ];
-
-  protected readonly fieldList = [
-    'Origen y destino',
-    'Detalle del contenido',
-    'Paquete con dimensiones y tipo',
-    'Tracking consolidado por pedido',
-  ];
+  protected readonly referencia = referenciaCorta;
+  protected readonly fecha = fechaLegible;
+  protected readonly estadoLegible = etiquetaEstado;
 
   constructor() {
     effect(() => {
-      if (this.auth.isAuthenticated()) {
-        void this.cargarPedidos();
-      } else {
-        this.pedidos.set([]);
-        this.selectedPedido.set(null);
-      }
+      const authenticated = this.auth.isAuthenticated();
+
+      untracked(() => {
+        if (authenticated) {
+          void this.cargarPedidos();
+        } else {
+          this.pedidos.set([]);
+          this.selectedPedido.set(null);
+        }
+      });
     });
   }
 
@@ -72,7 +82,7 @@ export class PedidosComponent {
     }
 
     this.loading.set(true);
-    this.feedback.set('');
+    this.error.set('');
 
     try {
       const pedidos = this.isAdmin()
@@ -81,7 +91,7 @@ export class PedidosComponent {
 
       this.pedidos.set(pedidos);
     } catch {
-      this.feedback.set('No se pudo cargar la lista de pedidos desde el BFF.');
+      this.error.set('No pudimos cargar tus pedidos. Intenta nuevamente.');
     } finally {
       this.loading.set(false);
     }
@@ -95,6 +105,7 @@ export class PedidosComponent {
 
     this.submitting.set(true);
     this.feedback.set('');
+    this.error.set('');
 
     const raw = this.pedidoForm.getRawValue();
     const request: CrearPedidoRequest = {
@@ -130,22 +141,26 @@ export class PedidosComponent {
         largoCm: 10,
         tipoPaquete: 'CAJA',
       });
-      this.feedback.set('Pedido creado correctamente.');
+      this.feedback.set('Pedido creado. Ya puedes seguir su estado en la lista.');
       await this.cargarPedidos();
     } catch {
-      this.feedback.set('No se pudo crear el pedido. Revisa la sesión y el BFF.');
+      this.error.set('No pudimos crear el pedido. Revisa los datos e intenta de nuevo.');
     } finally {
       this.submitting.set(false);
     }
   }
 
   async verDetalle(id: string): Promise<void> {
-    this.feedback.set('');
+    this.error.set('');
 
     try {
       this.selectedPedido.set(await firstValueFrom(this.bff.obtenerPedido(id)));
     } catch {
-      this.feedback.set('No se pudo cargar el detalle de tracking para este pedido.');
+      this.error.set('No pudimos cargar el seguimiento de este pedido.');
     }
+  }
+
+  cerrarDetalle(): void {
+    this.selectedPedido.set(null);
   }
 }

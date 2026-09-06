@@ -17,43 +17,20 @@ export class App {
   private readonly navigationItems: NavigationItem[] = [
     { label: 'Inicio', path: '/', roles: [], exact: true },
     { label: 'Pedidos', path: '/pedidos', roles: ['CLIENTE', 'ADMIN'] },
-    { label: 'Envios', path: '/envios', roles: ['REPARTIDOR', 'ADMIN'] },
-    { label: 'Admin', path: '/admin', roles: ['ADMIN'] },
+    { label: 'Envios', path: '/envios', roles: ['REPARTIDOR'] },
+    { label: 'Administracion', path: '/admin', roles: ['ADMIN'] },
   ];
 
   protected readonly visibleNavigation = computed(() =>
     this.navigationItems.filter((item) => this.canSee(item)),
   );
 
-  protected readonly roleHighlights = [
-    {
-      label: 'CLIENTE',
-      detail: 'Crea pedidos y revisa el seguimiento desde el BFF.',
-    },
-    {
-      label: 'REPARTIDOR',
-      detail: 'Actualiza el estado de sus envios y ve su cola de trabajo.',
-    },
-    {
-      label: 'ADMIN',
-      detail: 'Gestiona usuarios, pedidos y envios desde un unico punto.',
-    },
-  ];
-
-  protected loginPopup(): void {
+  protected login(): void {
     void this.auth.loginPopup();
-  }
-
-  protected loginRedirect(): void {
-    this.auth.loginRedirect();
   }
 
   protected logout(): void {
     this.auth.logout();
-  }
-
-  protected refreshSession(): void {
-    void this.auth.refreshSession();
   }
 
   private canSee(item: NavigationItem): boolean {

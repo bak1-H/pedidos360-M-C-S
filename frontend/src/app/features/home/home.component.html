@@ -1,113 +1,66 @@
-<section class="section-frame hero-shell">
-  <div class="section-head">
+@if (!autenticado()) {
+  <section class="section-frame">
     <div class="stack">
-      <p class="eyebrow">Tablero principal</p>
-      <h2 class="page-title">Control visual de despacho y seguimiento</h2>
+      <p class="eyebrow">Bienvenido</p>
+      <h2 class="page-title">Inicia sesion para operar</h2>
       <p class="page-copy">
-        Un panel sobrio para revisar rutas, estados de envíos, operación diaria y accesos rápidos a cada módulo.
+        Usa tu cuenta corporativa para entrar. Segun tu rol veras la creacion de pedidos, la ruta de entregas o el panel de administracion.
       </p>
     </div>
-
-    <div class="toolbar">
-      <button type="button" class="primary-button" (click)="loadProfile()">Actualizar perfil</button>
-      <a class="secondary-button link-button" routerLink="/pedidos">Abrir pedidos</a>
-    </div>
-  </div>
-
-  <div class="metric-grid">
-    @for (tile of highlights; track tile.title) {
-      <article class="metric">
-        <span class="metric-label">{{ tile.title }}</span>
-        <strong>{{ tile.value }}</strong>
-        <small>{{ tile.detail }}</small>
-      </article>
-    }
-  </div>
-</section>
-
-<section class="page-grid">
-  <article class="page-card">
-    <div class="section-head compact">
+  </section>
+} @else {
+  <section class="section-frame">
+    <div class="section-head">
       <div class="stack">
-        <p class="eyebrow">Perfil</p>
-        <h3>Información de la sesión</h3>
+        <p class="eyebrow">Tu cuenta</p>
+        <h2 class="page-title">Hola, {{ profile()?.nombre ?? 'bienvenido' }}</h2>
+        <p class="page-copy">Estos son los modulos disponibles para tu rol.</p>
       </div>
-      <span class="badge" [class.badge-success]="!!profile()" [class.badge-warning]="!profile()">
-        {{ profile() ? 'Perfil cargado' : 'Sin perfil' }}
-      </span>
+
+      <div class="toolbar">
+        <button type="button" class="secondary-button" (click)="loadProfile()" [disabled]="loadingProfile()">
+          {{ loadingProfile() ? 'Actualizando...' : 'Actualizar' }}
+        </button>
+      </div>
     </div>
 
-    @if (profile()) {
-      <div class="profile-grid">
-        <div>
-          <span class="field-label">Nombre</span>
-          <p>{{ profile()?.nombre }}</p>
-        </div>
-        <div>
-          <span class="field-label">Correo</span>
-          <p>{{ profile()?.email }}</p>
-        </div>
-        <div>
-          <span class="field-label">Rol</span>
-          <p>{{ profile()?.rol }}</p>
-        </div>
-        <div>
-          <span class="field-label">Azure AD Object ID</span>
-          <p class="mono">{{ profile()?.azureAdObjectId }}</p>
-        </div>
-      </div>
-
-      <div class="chip-row">
-        @for (role of profile()?.roles ?? []; track role) {
-          <span class="chip">{{ role }}</span>
-        }
-      </div>
-
-      <p class="panel-note">Recien creado: {{ profile()?.recienCreado ? 'Sí' : 'No' }}</p>
-    } @else {
-      <div class="empty-state compact">
-        <strong>Conéctate para leer tu perfil desde el BFF.</strong>
-        <p>Después del login, esta tarjeta muestra la información devuelta por <span class="mono">/bff/me</span>.</p>
+    @if (profile(); as perfil) {
+      <div class="metric-grid">
+        <article class="metric">
+          <span class="metric-label">Nombre</span>
+          <strong>{{ perfil.nombre }}</strong>
+          <small>{{ perfil.email }}</small>
+        </article>
+        <article class="metric highlight">
+          <span class="metric-label">Rol</span>
+          <strong>{{ roles().join(', ') || 'Sin asignar' }}</strong>
+          <small>segun tu cuenta corporativa</small>
+        </article>
+        <article class="metric">
+          <span class="metric-label">Modulos</span>
+          <strong>{{ accesosVisibles().length }}</strong>
+          <small>disponibles para ti</small>
+        </article>
       </div>
     }
 
     @if (profileError()) {
       <p class="panel-note error">{{ profileError() }}</p>
     }
-  </article>
+  </section>
 
-  <article class="page-card-soft">
-    <div class="section-head compact">
-      <div class="stack">
-        <p class="eyebrow">Flujo</p>
-        <h3>Indicadores clave</h3>
+  <section class="card-grid route-grid">
+    @for (acceso of accesosVisibles(); track acceso.path) {
+      <article class="route-card link-card">
+        <p class="eyebrow">{{ acceso.label }}</p>
+        <h3>{{ acceso.descripcion }}</h3>
+        <a class="inline-link" [routerLink]="acceso.path">Entrar</a>
+      </article>
+    } @empty {
+      <div class="empty-state">
+        <strong>Tu cuenta todavia no tiene un rol asignado.</strong>
+        <p>Pide a un administrador que te asigne el rol de cliente, repartidor o administrador.</p>
       </div>
-    </div>
-
-    <ul class="checklist">
-      @for (item of apiChecklist; track item) {
-        <li>{{ item }}</li>
-      }
-    </ul>
-
-    <div class="card-grid one-column compact-grid">
-      @for (card of roleCards; track card.title) {
-        <article class="route-card">
-          <p class="eyebrow">{{ card.title }}</p>
-          <h4>{{ card.title === 'ADMIN' ? 'Centro de control' : card.title === 'REPARTIDOR' ? 'Entrega en ruta' : 'Trazabilidad del pedido' }}</h4>
-          <p>{{ card.text }}</p>
-        </article>
-      }
-    </div>
-  </article>
-</section>
-
-<section class="card-grid route-grid">
-  @for (tile of routeTiles; track tile.path) {
-    <article class="route-card link-card">
-      <p class="eyebrow">{{ tile.label }}</p>
-      <h3>{{ tile.description }}</h3>
-      <a class="inline-link" [routerLink]="tile.path">Abrir módulo</a>
-    </article>
-  }
-</section>
+    }
+  </section>
+}

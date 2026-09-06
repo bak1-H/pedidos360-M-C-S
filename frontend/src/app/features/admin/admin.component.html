@@ -1,34 +1,33 @@
 <section class="section-frame">
   <div class="section-head">
     <div class="stack">
-      <p class="eyebrow">Administración</p>
-      <h2 class="page-title">Gestión general de la operación</h2>
-      <p class="page-copy">
-        Vista sobria para supervisar usuarios, pedidos y crear envíos sin recargar la pantalla con elementos sobrantes.
-      </p>
+      <p class="eyebrow">Administracion</p>
+      <h2 class="page-title">Gestion de la operacion</h2>
+      <p class="page-copy">Asigna repartidores a los pedidos y revisa el estado general del despacho.</p>
     </div>
 
     <div class="toolbar">
-      <button type="button" class="secondary-button" (click)="cargarDatos()">Refrescar datos</button>
-      <span class="badge badge-success">ADMIN</span>
+      <button type="button" class="secondary-button" (click)="cargarDatos()" [disabled]="loading()">
+        {{ loading() ? 'Actualizando...' : 'Actualizar' }}
+      </button>
     </div>
   </div>
 
   <div class="metric-grid">
     <article class="metric">
-      <span class="metric-label">Usuarios</span>
-      <strong>{{ usuarios().length }}</strong>
-      <small>cuentas activas</small>
-    </article>
-    <article class="metric">
       <span class="metric-label">Pedidos</span>
       <strong>{{ pedidos().length }}</strong>
-      <small>en tablero</small>
+      <small>registrados</small>
     </article>
     <article class="metric highlight">
-      <span class="metric-label">Envíos</span>
-      <strong>Asignar</strong>
-      <small>crear envío operativo</small>
+      <span class="metric-label">Por despachar</span>
+      <strong>{{ pedidosSinDespachar().length }}</strong>
+      <small>esperan repartidor</small>
+    </article>
+    <article class="metric">
+      <span class="metric-label">Repartidores</span>
+      <strong>{{ repartidores().length }}</strong>
+      <small>disponibles</small>
     </article>
   </div>
 </section>
@@ -37,81 +36,92 @@
   <article class="page-card">
     <div class="section-head compact">
       <div class="stack">
-        <p class="eyebrow">Crear envío</p>
-        <h3>Asignación administrativa</h3>
+        <p class="eyebrow">Asignar envio</p>
+        <h3>Entrega un pedido a un repartidor</h3>
       </div>
     </div>
 
     <form class="form-grid" [formGroup]="envioForm" (ngSubmit)="crearEnvio()">
       <label class="form-field form-span-2">
-        <span class="field-label">Pedido ID</span>
+        <span class="field-label">Pedido</span>
         <select class="select" formControlName="pedidoId">
           <option value="">Selecciona un pedido</option>
           @for (pedido of pedidos(); track pedido.id) {
-            <option [value]="pedido.id">{{ pedido.id.slice(0, 8) }}... - {{ pedido.estado }}</option>
+            <option [value]="pedido.id">{{ etiquetaPedido(pedido) }}</option>
           }
         </select>
       </label>
 
       <label class="form-field form-span-2">
-        <span class="field-label">Repartidor ID</span>
+        <span class="field-label">Repartidor</span>
         <select class="select" formControlName="repartidorId">
           <option value="">Selecciona un repartidor</option>
-          @for (usuario of usuarios(); track usuario.id) {
-            @if (usuario.rol === 'REPARTIDOR' || usuario.rol === 'ADMIN') {
-              <option [value]="usuario.id">{{ usuario.nombre }} - {{ usuario.rol }}</option>
-            }
+          @for (repartidor of repartidores(); track repartidor.id) {
+            <option [value]="repartidor.id">{{ repartidor.nombre }} · {{ repartidor.email }}</option>
           }
         </select>
+        @if (!repartidores().length) {
+          <small class="panel-note">No hay usuarios con rol repartidor todavia.</small>
+        }
       </label>
 
       <label class="form-field form-span-2">
-        <span class="field-label">Entrega estimada</span>
+        <span class="field-label">Entrega estimada (opcional)</span>
         <input class="input" type="datetime-local" formControlName="fechaEntregaEstimada" />
       </label>
 
       <div class="toolbar form-span-2">
-        <button type="submit" class="primary-button" [disabled]="saving()">Crear envío</button>
+        <button type="submit" class="primary-button" [disabled]="saving()">
+          {{ saving() ? 'Asignando...' : 'Asignar envio' }}
+        </button>
       </div>
     </form>
 
     @if (feedback()) {
       <p class="panel-note">{{ feedback() }}</p>
     }
+
+    @if (error()) {
+      <p class="panel-note error">{{ error() }}</p>
+    }
   </article>
 
   <article class="page-card-soft">
     <div class="section-head compact">
       <div class="stack">
-        <p class="eyebrow">Responsabilidades</p>
-        <h3>Resumen operacional</h3>
+        <p class="eyebrow">Equipo</p>
+        <h3>Usuarios registrados</h3>
       </div>
+      <span class="badge">{{ usuarios().length }}</span>
     </div>
 
-    <ul class="checklist">
-      @for (item of adminChecklist; track item) {
-        <li>{{ item }}</li>
-      }
-    </ul>
-
-    <div class="table-wrap compact">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Usuarios</th>
-            <th>Rol</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (usuario of usuarios().slice(0, 5); track usuario.id) {
+    @if (usuarios().length) {
+      <div class="table-wrap compact">
+        <table class="data-table">
+          <thead>
             <tr>
-              <td>{{ usuario.nombre }}</td>
-              <td><span class="badge badge-warning">{{ usuario.rol }}</span></td>
+              <th>Nombre</th>
+              <th>Correo</th>
+              <th>Rol</th>
             </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            @for (usuario of usuarios(); track usuario.id) {
+              <tr>
+                <td>{{ usuario.nombre }}</td>
+                <td>{{ usuario.email }}</td>
+                <td><span class="badge">{{ usuario.rol }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="empty-state compact">
+        <strong>Aun no hay usuarios registrados.</strong>
+        <p>Los perfiles se crean automaticamente la primera vez que cada persona inicia sesion.</p>
+      </div>
+    }
   </article>
 </section>
 
@@ -119,36 +129,41 @@
   <div class="section-head compact">
     <div class="stack">
       <p class="eyebrow">Pedidos</p>
-      <h3>Pedidos disponibles para asignación</h3>
+      <h3>Todos los pedidos</h3>
     </div>
   </div>
 
   @if (loading()) {
-    <div class="empty-state">Cargando datos administrativos...</div>
+    <div class="empty-state">Cargando pedidos...</div>
   } @else if (pedidos().length) {
     <div class="table-wrap">
       <table class="data-table">
         <thead>
           <tr>
-            <th>ID</th>
+            <th>Pedido</th>
             <th>Estado</th>
             <th>Origen</th>
             <th>Destino</th>
+            <th>Creado</th>
           </tr>
         </thead>
         <tbody>
           @for (pedido of pedidos(); track pedido.id) {
             <tr>
-              <td class="mono">{{ pedido.id.slice(0, 8) }}...</td>
-              <td><span class="badge badge-success">{{ pedido.estado }}</span></td>
+              <td>{{ referencia(pedido.id) }}</td>
+              <td><span class="badge badge-success">{{ estadoLegible(pedido.estado) }}</span></td>
               <td>{{ pedido.direccionOrigen }}</td>
               <td>{{ pedido.direccionDestino }}</td>
+              <td>{{ fecha(pedido.fechaCreacion) }}</td>
             </tr>
           }
         </tbody>
       </table>
     </div>
   } @else {
-    <div class="empty-state">No hay pedidos cargados.</div>
+    <div class="empty-state">
+      <strong>No hay pedidos registrados.</strong>
+      <p>Cuando un cliente cree su primer pedido, aparecera aqui listo para asignar.</p>
+    </div>
   }
 </section>
