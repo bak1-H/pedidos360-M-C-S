@@ -1,0 +1,19 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: envios-service
+  datasource:
+    url: ${ENVIOS_DB_URL}
+    username: ${ENVIOS_DB_USERNAME}
+    password: ${ENVIOS_DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: envios
+
+internal:
+  token: ${INTERNAL_TOKEN}

@@ -1,0 +1,16 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: bff
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${AZURE_AD_ISSUER_URI}
+
+servicios:
+  usuarios-url: ${USUARIOS_SERVICE_URL:http://localhost:8081}
+  pedidos-url: ${PEDIDOS_SERVICE_URL:http://localhost:8082}
+  envios-url: ${ENVIOS_SERVICE_URL:http://localhost:8083}

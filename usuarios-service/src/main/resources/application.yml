@@ -1,0 +1,19 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: usuarios-service
+  datasource:
+    url: ${USUARIOS_DB_URL}
+    username: ${USUARIOS_DB_USERNAME}
+    password: ${USUARIOS_DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: usuarios
+
+internal:
+  token: ${INTERNAL_TOKEN}
