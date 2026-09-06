@@ -1,42 +1,7 @@
-# ---------- Java / Maven ----------
 target/
-*.class
-build/
-
-# El Maven Wrapper SI se sube: sin .mvn/wrapper/maven-wrapper.properties
-# el comando ./mvnw falla al clonar el repo en otra maquina.
-# Solo se ignora el binario que el wrapper descarga.
-.mvn/wrapper/maven-wrapper.jar
-
-# ---------- Secretos ----------
-.env
-.env.*
-!.env.example
-application-secrets.yml
-application-local.yml
-*.pem
-*.pfx
-
-# ---------- Frontend ----------
-node_modules/
-dist/
-.angular/
-
-# ---------- IDE ----------
-.idea/
+.mvn/
 *.iml
-*.ipr
-*.iws
-.vscode/
-.settings/
-.project
-.classpath
-
-# ---------- SO ----------
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# ---------- Logs ----------
-*.log
-logs/
+.idea/
+*.class
+application-secrets.yml
+.env
