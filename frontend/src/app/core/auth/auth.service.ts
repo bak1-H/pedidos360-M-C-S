@@ -124,7 +124,7 @@ export class AuthService {
     const account = this.activeAccount();
 
     if (!account) {
-      await this.loginPopup();
+      this.loginRedirect();
       return;
     }
 

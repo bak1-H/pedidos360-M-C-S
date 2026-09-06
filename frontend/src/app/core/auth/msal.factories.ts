@@ -23,6 +23,7 @@ export function msalGuardConfigFactory(): MsalGuardConfiguration {
     interactionType: InteractionType.Redirect,
     authRequest: {
       scopes: appSettings.loginScopes,
+      redirectUri: appSettings.redirectUri,
     },
   };
 }

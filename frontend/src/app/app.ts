@@ -26,7 +26,7 @@ export class App {
   );
 
   protected login(): void {
-    void this.auth.loginPopup();
+    this.auth.loginRedirect();
   }
 
   protected logout(): void {
