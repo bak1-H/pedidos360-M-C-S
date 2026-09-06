@@ -8,9 +8,33 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${AZURE_AD_ISSUER_URI}
+          # Con accessTokenAcceptedVersion=2 en el manifiesto del App Registration,
+          # Azure AD emite tokens con iss = .../v2.0. Si queda en la version 1, el iss
+          # llega como https://sts.windows.net/{tenantId}/ y todo falla con 401.
+          issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0
+          jwk-set-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID}/discovery/v2.0/keys
+
+azure:
+  # Client ID o App ID URI (api://...) de la API expuesta en Azure AD.
+  # Es contra esto que se valida el claim "aud" del token.
+  audiencia: ${AZURE_API_CLIENT_ID}
 
 servicios:
   usuarios-url: ${USUARIOS_SERVICE_URL:http://localhost:8081}
   pedidos-url: ${PEDIDOS_SERVICE_URL:http://localhost:8082}
   envios-url: ${ENVIOS_SERVICE_URL:http://localhost:8083}
+  internal-token: ${INTERNAL_TOKEN}
+
+cors:
+  origenes-permitidos: ${CORS_ORIGINS:http://localhost:4200}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.pedidos360.bff: DEBUG
+    org.springframework.security: INFO
