@@ -4,16 +4,16 @@ server:
 spring:
   application:
     name: envios-service
-  datasource:
-    url: ${ENVIOS_DB_URL}
-    username: ${ENVIOS_DB_USERNAME}
-    password: ${ENVIOS_DB_PASSWORD}
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:azure}
   jpa:
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        default_schema: envios
+    open-in-view: false
 
 internal:
   token: ${INTERNAL_TOKEN}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
