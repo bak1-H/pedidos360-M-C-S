@@ -36,7 +36,7 @@ public class MeController {
 
         Optional<UsuarioDto> existente = usuariosClient.buscarPorOid(identidad);
         if (existente.isPresent()) {
-            return aPerfil(existente.get(), identidad, false);
+            return aPerfil(sincronizarRol(existente.get(), identidad), identidad, false);
         }
 
         log.info("Aprovisionando perfil nuevo para oid {}", identidad.oid());
@@ -49,6 +49,28 @@ public class MeController {
                 identidad);
 
         return aPerfil(creado, identidad, true);
+    }
+
+    /**
+     * Azure AD es la unica fuente de verdad de los roles. El rol guardado en
+     * usuarios-service es solo una proyeccion para poder listar al equipo, asi
+     * que se realinea en cada login. Si el token no trae roles no se toca nada:
+     * rolPrincipal() cae a CLIENTE por defecto y borraria un rol valido.
+     */
+    private UsuarioDto sincronizarRol(UsuarioDto usuario, IdentidadInterna identidad) {
+        if (identidad.roles().isEmpty()) {
+            return usuario;
+        }
+
+        String rolDelToken = identidad.rolPrincipal();
+        if (rolDelToken.equals(usuario.rol())) {
+            return usuario;
+        }
+
+        log.info("Rol de {} desactualizado: {} en base, {} en Azure AD. Sincronizando.",
+                identidad.oid(), usuario.rol(), rolDelToken);
+
+        return usuariosClient.actualizarRol(usuario.id(), rolDelToken, identidad);
     }
 
     private PerfilResponse aPerfil(UsuarioDto usuario, IdentidadInterna identidad, boolean recienCreado) {

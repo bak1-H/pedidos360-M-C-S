@@ -1,5 +1,6 @@
 package com.pedidos360.bff.client;
 
+import com.pedidos360.bff.dto.ActualizarRolRequest;
 import com.pedidos360.bff.dto.CrearUsuarioRequest;
 import com.pedidos360.bff.dto.UsuarioDto;
 import com.pedidos360.bff.exception.RecursoNoEncontradoException;
@@ -57,6 +58,16 @@ public class UsuariosClient {
                 .map(UsuarioDto::id)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Perfil no encontrado. Llame primero a GET /bff/me."));
+    }
+
+    public UsuarioDto actualizarRol(UUID id, String rol, IdentidadInterna identidad) {
+        return usuariosWebClient.patch()
+                .uri("/internal/usuarios/{id}/rol", id)
+                .headers(identidad::aplicar)
+                .bodyValue(new ActualizarRolRequest(rol))
+                .retrieve()
+                .bodyToMono(UsuarioDto.class)
+                .block();
     }
 
     public List<UsuarioDto> listar(IdentidadInterna identidad) {
