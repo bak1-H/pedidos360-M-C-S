@@ -23,15 +23,40 @@ export class AuthService {
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly activeAccount = signal<AccountInfo | null>(null);
+  private readonly accessTokenRoles = signal<string[] | null>(null);
+
+  /**
+   * homeAccountId del usuario para el que ya se pidieron los roles. Evita
+   * repetir acquireTokenSilent en cada resincronizacion de cuenta: sin esto,
+   * cualquier trigger reactivo (inProgress$, interceptor, etc.) termina
+   * pidiendo el token de nuevo, lo que genera mas eventos de MSAL, lo que
+   * dispara mas resincronizaciones, en un ciclo que en la practica se
+   * convierte en miles de requests por minuto.
+   */
+  private rolesLoadedForAccount: string | null = null;
+
   readonly refreshState = signal<SessionState>('idle');
   readonly lastMessage = signal<string>('Ready to authenticate with Azure AD.');
 
   readonly isAuthenticated = computed(() => this.activeAccount() !== null);
   readonly displayName = computed(() => this.resolveDisplayName(this.activeAccount()));
   readonly email = computed(() => this.resolveEmail(this.activeAccount()));
-  readonly roles = computed(() => this.resolveRoles(this.activeAccount()));
+
+  /**
+   * Los App Roles estan definidos y asignados en el App Registration de la API
+   * (pedidos360-api), no en el del SPA. Por eso NO aparecen en el idToken (emitido
+   * para el SPA) sino en el accessToken pedido con el scope de la API — el mismo
+   * que MsalInterceptor adjunta en cada llamada al BFF.
+   */
+  readonly roles = computed(() => this.accessTokenRoles() ?? this.resolveRoles(this.activeAccount()));
 
   constructor() {
+    /**
+     * Esta suscripcion SOLO mantiene sincronizados nombre/email para la UI.
+     * A proposito NO dispara ninguna llamada de red (ver loadRolesOnce): con
+     * MsalInterceptor pidiendo tokens en cada request al BFF, inProgress$
+     * emite constantemente, y cualquier efecto secundario aca se amplifica.
+     */
     this.broadcastService.inProgress$
       .pipe(
         filter((status: InteractionStatus) => status === InteractionStatus.None),
@@ -43,19 +68,22 @@ export class AuthService {
   async initialize(): Promise<void> {
     await this.msalService.instance.initialize();
 
-    this.msalService.handleRedirectObservable().subscribe({
-      next: (result) => {
-        if (result?.account) {
-          this.msalService.instance.setActiveAccount(result.account);
-        }
-
-        this.syncActiveAccount();
-      },
-      error: () => this.syncActiveAccount(),
-      complete: () => this.syncActiveAccount(),
-    });
+    try {
+      const redirectResult = await firstValueFrom(this.msalService.handleRedirectObservable());
+      if (redirectResult) {
+        this.applyAuthResult(redirectResult);
+        return;
+      }
+    } catch {
+      this.lastMessage.set('No se pudo completar el login por redireccion.');
+    }
 
     this.syncActiveAccount();
+
+    const account = this.activeAccount();
+    if (account) {
+      await this.loadRolesOnce(account);
+    }
   }
 
   hasAnyRole(requiredRoles: readonly string[]): boolean {
@@ -69,7 +97,7 @@ export class AuthService {
         scopes: appSettings.loginScopes,
       }));
 
-      this.setAuthenticatedAccount(result);
+      this.applyAuthResult(result);
       this.refreshState.set('ready');
       this.lastMessage.set('Authentication completed with popup.');
     } catch {
@@ -108,13 +136,12 @@ export class AuthService {
         scopes: appSettings.loginScopes,
       }));
 
-      this.setAuthenticatedAccount(result);
+      this.applyAuthResult(result);
       this.refreshState.set('ready');
       this.lastMessage.set('Access token renewed silently.');
     } catch {
       this.refreshState.set('error');
       this.lastMessage.set('Silent refresh failed. Reauthentication required.');
-      return;
     }
   }
 
@@ -125,17 +152,58 @@ export class AuthService {
       this.msalService.instance.setActiveAccount(selectedAccount);
     }
 
-    this.activeAccount.set(selectedAccount);
+    this.updateActiveAccount(selectedAccount);
   }
 
-  private setAuthenticatedAccount(result: AuthenticationResult): void {
+  /**
+   * MSAL devuelve una instancia de AccountInfo nueva en cada llamada, incluso
+   * para la misma cuenta. Las signals de Angular comparan por referencia, asi
+   * que comparamos por homeAccountId para no generar una emision — y por lo
+   * tanto un retrigger de quien dependa de esta signal — cuando la cuenta
+   * logica no cambio realmente.
+   */
+  private updateActiveAccount(account: AccountInfo | null): void {
+    const current = this.activeAccount();
+    if (current?.homeAccountId === account?.homeAccountId) {
+      return;
+    }
+
+    this.activeAccount.set(account);
+  }
+
+  /** Login/redirect/refresh ya traen un accessToken valido para loginScopes: se decodifica directo, sin pedir otro. */
+  private applyAuthResult(result: AuthenticationResult): void {
     const account = result.account ?? null;
 
     if (account) {
       this.msalService.instance.setActiveAccount(account);
     }
 
-    this.activeAccount.set(account);
+    this.updateActiveAccount(account);
+    this.accessTokenRoles.set(this.decodeRolesFromAccessToken(result.accessToken));
+
+    if (account) {
+      this.rolesLoadedForAccount = account.homeAccountId;
+    }
+  }
+
+  /** Unico caso que necesita un acquireTokenSilent aparte: sesion recuperada del storage al recargar la pagina. */
+  private async loadRolesOnce(account: AccountInfo): Promise<void> {
+    if (this.rolesLoadedForAccount === account.homeAccountId) {
+      return;
+    }
+
+    try {
+      const result = await firstValueFrom(this.msalService.acquireTokenSilent({
+        account,
+        scopes: appSettings.loginScopes,
+      }));
+
+      this.accessTokenRoles.set(this.decodeRolesFromAccessToken(result.accessToken));
+      this.rolesLoadedForAccount = account.homeAccountId;
+    } catch {
+      this.accessTokenRoles.set([]);
+    }
   }
 
   private resolveDisplayName(account: AccountInfo | null): string {
@@ -163,5 +231,16 @@ export class AuthService {
 
     const claims = account.idTokenClaims as ClaimsWithRoles | undefined;
     return Array.isArray(claims?.roles) ? claims.roles : [];
+  }
+
+  private decodeRolesFromAccessToken(accessToken: string): string[] {
+    try {
+      const payload = accessToken.split('.')[1];
+      const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+      const claims = JSON.parse(atob(normalized)) as ClaimsWithRoles;
+      return Array.isArray(claims.roles) ? claims.roles : [];
+    } catch {
+      return [];
+    }
   }
 }
