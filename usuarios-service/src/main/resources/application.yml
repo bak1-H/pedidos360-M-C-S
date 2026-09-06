@@ -4,21 +4,16 @@ server:
 spring:
   application:
     name: usuarios-service
-  profiles:
-    active: ${SPRING_PROFILES_ACTIVE:azure}
+  datasource:
+    url: ${USUARIOS_DB_URL}
+    username: ${USUARIOS_DB_USERNAME}
+    password: ${USUARIOS_DB_PASSWORD}
   jpa:
-    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: usuarios
 
-# Mismo nombre de propiedad y mismo header que usan pedidos-service y envios-service.
 internal:
   token: ${INTERNAL_TOKEN}
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-
-logging:
-  level:
-    com.pedidos360.usuarios: DEBUG
