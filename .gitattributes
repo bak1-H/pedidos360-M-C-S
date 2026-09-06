@@ -1,0 +1,10 @@
+# Normaliza finales de linea para que el repo funcione igual en Windows, Linux y CI.
+* text=auto
+
+# mvnw es un script de shell: con CRLF falla en Linux con "bad interpreter".
+mvnw text eol=lf
+*.sh text eol=lf
+
+# Los .cmd son de Windows y necesitan CRLF.
+*.cmd text eol=crlf
+*.bat text eol=crlf
