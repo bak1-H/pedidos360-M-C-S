@@ -35,6 +35,15 @@
             ]
           },
           "configurations": {
+            "aws": {
+              "fileReplacements": [
+                {
+                  "replace": "src/app/core/config/app-settings.ts",
+                  "with": "src/app/core/config/app-settings.aws.ts"
+                }
+              ],
+              "outputHashing": "all"
+            },
             "production": {
               "budgets": [
                 {
