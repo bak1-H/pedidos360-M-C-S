@@ -24,4 +24,28 @@ public class WebClientConfig {
                 .defaultHeader("X-Internal-Token", internalToken)
                 .build();
     }
+
+    @Bean
+    public WebClient pedidosWebClient(
+            WebClient.Builder builder,
+            @Value("${servicios.pedidos-url}") String pedidosUrl,
+            @Value("${servicios.internal-token}") String internalToken) {
+
+        return builder
+                .baseUrl(pedidosUrl)
+                .defaultHeader("X-Internal-Token", internalToken)
+                .build();
+    }
+
+    @Bean
+    public WebClient enviosWebClient(
+            WebClient.Builder builder,
+            @Value("${servicios.envios-url}") String enviosUrl,
+            @Value("${servicios.internal-token}") String internalToken) {
+
+        return builder
+                .baseUrl(enviosUrl)
+                .defaultHeader("X-Internal-Token", internalToken)
+                .build();
+    }
 }

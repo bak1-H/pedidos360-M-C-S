@@ -39,6 +39,13 @@ public class EnvioService {
         return EnvioResponseDTO.from(envioRepository.save(envio));
     }
 
+    @Transactional(readOnly = true)
+    public EnvioResponseDTO buscarPorId(UUID id) {
+        Envio envio = envioRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Envio no encontrado: " + id));
+        return EnvioResponseDTO.from(envio);
+    }
+
     @Transactional
     public EnvioResponseDTO cambiarEstado(UUID id, CambioEstadoEnvioDTO cambio) {
         Envio envio = envioRepository.findById(id)

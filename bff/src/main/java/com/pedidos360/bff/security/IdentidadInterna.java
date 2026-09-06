@@ -40,4 +40,13 @@ public record IdentidadInterna(String oid, List<String> roles) {
     public String rolPrincipal() {
         return roles.isEmpty() ? "CLIENTE" : roles.get(0);
     }
+
+    /**
+     * Para los chequeos de "dueño o ADMIN" que SecurityConfig no puede expresar
+     * con requestMatchers, porque dependen de un dato de negocio (clienteId,
+     * repartidorId) y no solo del rol.
+     */
+    public boolean esAdmin() {
+        return roles.contains("ADMIN");
+    }
 }

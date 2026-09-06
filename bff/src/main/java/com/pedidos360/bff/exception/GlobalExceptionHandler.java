@@ -42,4 +42,22 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.de(504, "MICROSERVICIO_INALCANZABLE",
                         "No se pudo contactar un servicio interno", request.getRequestURI()));
     }
+
+    @ExceptionHandler(RecursoNoEncontradoException.class)
+    public ResponseEntity<ErrorResponse> recursoNoEncontrado(
+            RecursoNoEncontradoException ex, HttpServletRequest request) {
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.de(404, "NO_ENCONTRADO", ex.getMessage(), request.getRequestURI()));
+    }
+
+    @ExceptionHandler(AccesoNoAutorizadoException.class)
+    public ResponseEntity<ErrorResponse> accesoNoAutorizado(
+            AccesoNoAutorizadoException ex, HttpServletRequest request) {
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(ErrorResponse.de(403, "SIN_PERMISO", ex.getMessage(), request.getRequestURI()));
+    }
 }

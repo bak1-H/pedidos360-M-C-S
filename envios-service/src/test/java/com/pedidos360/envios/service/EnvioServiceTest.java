@@ -58,6 +58,21 @@ class EnvioServiceTest {
     }
 
     @Test
+    void buscaPorIdCorrectamente() {
+        EnvioService service = new EnvioService(envioRepository);
+        UUID id = UUID.randomUUID();
+        Envio existente = new Envio();
+        existente.setId(id);
+        existente.setPedidoId(UUID.randomUUID());
+
+        when(envioRepository.findById(id)).thenReturn(Optional.of(existente));
+
+        EnvioResponseDTO response = service.buscarPorId(id);
+
+        assertThat(response.id()).isEqualTo(id);
+    }
+
+    @Test
     void lanzaExcepcionSiEnvioNoExiste() {
         EnvioService service = new EnvioService(envioRepository);
         UUID id = UUID.randomUUID();
