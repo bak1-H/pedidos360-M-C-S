@@ -2,59 +2,41 @@
   <div class="ambient ambient-left"></div>
   <div class="ambient ambient-right"></div>
 
-  <header class="shell-header">
-    <section class="brand-panel surface">
-      <p class="eyebrow">Centro de envios y trazabilidad</p>
-      <h1>{{ appName }}</h1>
-      <p class="lede">
-        Crea pedidos, asigna repartidores y sigue el estado de cada entrega desde un solo lugar.
-      </p>
-    </section>
+  <header class="navbar">
+    <a class="nav-brand" routerLink="/">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">{{ appName }}</span>
+    </a>
 
-    <aside class="session-panel surface">
-      <div class="panel-head">
-        <div>
-          <p class="eyebrow">Sesion</p>
-          <h2>{{ auth.displayName() }}</h2>
+    @if (auth.isAuthenticated()) {
+      <nav class="nav-links" aria-label="Secciones">
+        @for (item of visibleNavigation(); track item.path) {
+          <a
+            [routerLink]="item.path"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+          >
+            {{ item.label }}
+          </a>
+        }
+      </nav>
+    }
+
+    <div class="nav-side">
+      <div class="nav-clock" role="timer" aria-live="off">
+        <span class="clock-time">{{ hora() }}</span>
+        <span class="clock-date">{{ fecha() }}</span>
+      </div>
+
+      @if (auth.isAuthenticated()) {
+        <div class="nav-user">
+          <span class="nav-user-name">{{ auth.displayName() }}</span>
+          <span class="nav-user-role">{{ auth.roles().join(' · ') || 'Sin rol asignado' }}</span>
         </div>
-        <span class="status-pill" [class.active]="auth.isAuthenticated()">
-          {{ auth.isAuthenticated() ? 'Conectado' : 'Sin sesion' }}
-        </span>
-      </div>
-
-      <p class="panel-copy">{{ auth.email() }}</p>
-
-      <div class="role-row">
-        @for (role of auth.roles(); track role) {
-          <span class="role-tag">{{ role }}</span>
-        } @empty {
-          <span class="role-tag muted">Sin roles asignados</span>
-        }
-      </div>
-
-      <div class="button-row">
-        @if (!auth.isAuthenticated()) {
-          <button type="button" class="primary-button" (click)="login()">Iniciar sesion</button>
-        } @else {
-          <button type="button" class="secondary-button" (click)="logout()">Cerrar sesion</button>
-        }
-      </div>
-    </aside>
-  </header>
-
-  @if (auth.isAuthenticated()) {
-    <nav class="shell-nav surface">
-      @for (item of visibleNavigation(); track item.path) {
-        <a
-          [routerLink]="item.path"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
-        >
-          {{ item.label }}
-        </a>
+        <button type="button" class="nav-button" (click)="logout()">Salir</button>
       }
-    </nav>
-  }
+    </div>
+  </header>
 
   <main class="workspace">
     <router-outlet />

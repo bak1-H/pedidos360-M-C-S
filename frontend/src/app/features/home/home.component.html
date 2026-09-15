@@ -1,12 +1,20 @@
 @if (!autenticado()) {
-  <section class="section-frame">
-    <div class="stack">
-      <p class="eyebrow">Bienvenido</p>
-      <h2 class="page-title">Inicia sesion para operar</h2>
-      <p class="page-copy">
-        Usa tu cuenta corporativa para entrar. Segun tu rol veras la creacion de pedidos, la ruta de entregas o el panel de administracion.
-      </p>
-    </div>
+  <section class="login-panel">
+    <p class="eyebrow">Centro de envios y trazabilidad</p>
+    <h1 class="login-title">Inicia sesion para operar</h1>
+    <p class="login-copy">
+      Entra con tu cuenta corporativa. Segun el rol que tengas asignado veras un modulo distinto.
+    </p>
+
+    <button type="button" class="primary-button login-cta" (click)="login()">
+      Iniciar sesion con Azure AD
+    </button>
+
+    <ul class="login-roles">
+      <li><strong>Cliente</strong> crea pedidos y sigue sus envios</li>
+      <li><strong>Repartidor</strong> actualiza el estado de las entregas en ruta</li>
+      <li><strong>Administrador</strong> asigna repartidores y supervisa la operacion</li>
+    </ul>
   </section>
 } @else {
   <section class="section-frame">
