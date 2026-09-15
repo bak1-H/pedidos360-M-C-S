@@ -16,6 +16,7 @@ interface AccesoDirecto {
   standalone: true,
   imports: [RouterLink],
   templateUrl: './home.component.html',
+  styleUrl: './home.component.scss',
 })
 export class HomeComponent {
   private readonly auth = inject(AuthService);
@@ -65,6 +66,10 @@ export class HomeComponent {
         }
       });
     });
+  }
+
+  protected login(): void {
+    this.auth.loginRedirect();
   }
 
   async loadProfile(): Promise<void> {

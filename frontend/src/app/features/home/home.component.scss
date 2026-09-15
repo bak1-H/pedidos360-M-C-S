@@ -1,0 +1,40 @@
+:host {
+	display: block;
+	position: relative;
+}
+
+:host::before {
+	content: '';
+	position: fixed;
+	left: 50%;
+	bottom: -6vh;
+	z-index: -1;
+	pointer-events: none;
+	width: clamp(320px, 42vw, 620px);
+	aspect-ratio: 1080 / 952;
+	transform: translateX(-50%);
+	background-image: url('/supervisor.jpg');
+	background-size: cover;
+	background-position: center 30%;
+	filter: grayscale(1) contrast(0.95);
+	-webkit-mask-image: radial-gradient(ellipse 58% 52% at 50% 46%, #000 18%, rgba(0, 0, 0, 0.55) 48%, transparent 76%);
+	mask-image: radial-gradient(ellipse 58% 52% at 50% 46%, #000 18%, rgba(0, 0, 0, 0.55) 48%, transparent 76%);
+	opacity: 0;
+	animation: supervision 45s cubic-bezier(0.9, 0, 0.95, 1) 8s forwards;
+}
+
+@keyframes supervision {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 0.2;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:host::before {
+		animation: none;
+		opacity: 0.12;
+	}
+}
