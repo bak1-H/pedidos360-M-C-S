@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.UUID;
 
-/** SDD seccion 4.1: los unicos endpoints de envios que Angular conoce. */
 @RestController
 @RequestMapping("/bff/envios")
 @RequiredArgsConstructor

@@ -21,7 +21,6 @@ public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
 
-    /** Lo usa el BFF en /bff/me para resolver el perfil a partir del claim del JWT. */
     public UsuarioResponse buscarPorAzureAdObjectId(String azureAdObjectId) {
         return usuarioRepository.findByAzureAdObjectId(azureAdObjectId)
                 .map(UsuarioResponse::desde)
@@ -35,7 +34,6 @@ public class UsuarioService {
                 .toList();
     }
 
-    /** Aprovisionamiento: crea el perfil la primera vez que el usuario entra. */
     @Transactional
     public UsuarioResponse crear(CrearUsuarioRequest request) {
         if (usuarioRepository.existsByAzureAdObjectId(request.azureAdObjectId())) {

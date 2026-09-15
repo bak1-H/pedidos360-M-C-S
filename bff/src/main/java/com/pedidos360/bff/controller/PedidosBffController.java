@@ -26,10 +26,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * SDD seccion 4.1: los unicos endpoints de pedidos que Angular conoce.
- * pedidos-service y envios-service no son publicos, solo el BFF los llama.
- */
 @RestController
 @RequestMapping("/bff/pedidos")
 @RequiredArgsConstructor

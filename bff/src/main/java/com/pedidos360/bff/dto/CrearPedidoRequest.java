@@ -7,7 +7,6 @@ import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 
-/** Lo que manda Angular a POST /bff/pedidos. Sin clienteId: eso lo resuelve el BFF desde el token. */
 public record CrearPedidoRequest(
         @NotBlank String direccionOrigen,
         @NotBlank String direccionDestino,

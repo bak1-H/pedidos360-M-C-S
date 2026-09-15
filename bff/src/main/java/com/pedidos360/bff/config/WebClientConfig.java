@@ -8,11 +8,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 public class WebClientConfig {
 
-    /**
-     * Cliente hacia usuarios-service. El header X-Internal-Token viaja en todas las
-     * llamadas: es lo que le demuestra al microservicio que quien llama es el BFF
-     * y no alguien que se saltó la regla de red.
-     */
+    /** Adjunta X-Internal-Token en cada llamada para identificarse como el BFF. */
     @Bean
     public WebClient usuariosWebClient(
             WebClient.Builder builder,

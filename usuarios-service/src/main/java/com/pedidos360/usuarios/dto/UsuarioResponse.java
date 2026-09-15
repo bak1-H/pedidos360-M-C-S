@@ -6,7 +6,6 @@ import com.pedidos360.usuarios.model.Usuario;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/** Nunca exponemos la entidad JPA en el controller (convencion del SDD, seccion 9). */
 public record UsuarioResponse(
         UUID id,
         String azureAdObjectId,

@@ -10,16 +10,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import java.util.Collection;
 import java.util.List;
 
-/**
- * Traduce el claim "roles" del Access Token de Azure AD a authorities de Spring Security.
- *
- * OJO (SDD 7.3): "roles" y "scp" son claims DISTINTOS en Azure AD.
- *   - "roles" -> App Roles asignados al usuario o al grupo. Es el que usamos.
- *   - "scp"   -> scopes delegados de la aplicacion. NO sirve para autorizar por rol.
- *
- * Spring exige el prefijo ROLE_ para que funcione hasRole("ADMIN"), por eso lo
- * agregamos aca: el claim trae "ADMIN" y la authority queda "ROLE_ADMIN".
- */
+/** Convierte el claim "roles" (no "scp") en authorities con prefijo ROLE_. */
 public class JwtRolesConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
     public static final String CLAIM_ROLES = "roles";

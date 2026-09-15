@@ -28,16 +28,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Los tests que pide el SDD 7.2, uno por cada forma de fallar:
- *   - sin token                  -> 401
- *   - token mal firmado          -> 401
- *   - token expirado             -> 401
- *   - token valido, rol que no   -> 403
- *   - token valido, rol correcto -> 200
- *
- * Reemplazamos el JwtDecoder por un mock para no depender de Azure AD en el build.
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 class SeguridadEndpointsTest {

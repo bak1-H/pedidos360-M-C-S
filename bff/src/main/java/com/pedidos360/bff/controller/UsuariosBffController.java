@@ -12,11 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/**
- * GET /bff/usuarios -- solo ADMIN.
- * La restriccion de rol vive en SecurityConfig, no aca: si un CLIENTE llama,
- * la peticion nunca llega a este metodo, se corta en el filtro con 403.
- */
 @RestController
 @RequestMapping("/bff")
 @RequiredArgsConstructor

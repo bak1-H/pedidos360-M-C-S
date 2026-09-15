@@ -9,11 +9,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
-/**
- * Angular corre en otro origen (localhost:4200 en desarrollo), asi que el BFF
- * tiene que permitirlo explicitamente o el navegador bloquea las llamadas antes
- * de que el token siquiera se valide.
- */
 @Configuration
 public class CorsConfig {
 

@@ -36,7 +36,6 @@ public class Usuario {
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
-    /** Claim "sub"/"oid" del JWT de Azure AD. Es la llave con la que el BFF nos busca. */
     @Column(name = "azure_ad_object_id", nullable = false, length = 100)
     private String azureAdObjectId;
 

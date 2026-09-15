@@ -14,10 +14,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-/**
- * Se dispara cuando el token ES valido pero al usuario le falta el rol necesario.
- * 403, no 401: la diferencia importa para la rubrica.
- */
+/** Responde 403 en JSON cuando el token es valido pero falta el rol. */
 @Slf4j
 @Component
 @RequiredArgsConstructor

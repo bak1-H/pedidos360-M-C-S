@@ -33,7 +33,7 @@ public class UsuariosClient {
             return Optional.ofNullable(usuario);
 
         } catch (WebClientResponseException.NotFound e) {
-            // El perfil todavia no existe: es la primera vez que este usuario entra.
+            // Primer ingreso: el perfil todavia no existe.
             return Optional.empty();
         }
     }
@@ -48,11 +48,7 @@ public class UsuariosClient {
                 .block();
     }
 
-    /**
-     * pedidos-service y envios-service guardan clienteId/repartidorId como el UUID
-     * interno de usuarios-service, no como el oid de Azure AD. Todo controller que
-     * necesite ese UUID para armar una peticion hacia esos dos servicios pasa por aca.
-     */
+    /** Traduce el oid de Azure AD al UUID interno que usan pedidos y envios. */
     public UUID resolverUsuarioInternoId(IdentidadInterna identidad) {
         return buscarPorOid(identidad)
                 .map(UsuarioDto::id)

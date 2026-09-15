@@ -15,13 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Optional;
 
-/**
- * GET /bff/me -- lo primero que llama Angular despues del login con MSAL.
- *
- * Si el usuario nunca habia entrado, aca se le crea el perfil en usuarios-service
- * (aprovisionamiento). Ojo: esto NO es el login. El login ya ocurrio en Azure AD;
- * cuando esta peticion llega, el token ya fue validado por SecurityConfig.
- */
+/** Devuelve el perfil y lo crea si es el primer ingreso del usuario. */
 @Slf4j
 @RestController
 @RequestMapping("/bff")
@@ -51,12 +45,7 @@ public class MeController {
         return aPerfil(creado, identidad, true);
     }
 
-    /**
-     * Azure AD es la unica fuente de verdad de los roles. El rol guardado en
-     * usuarios-service es solo una proyeccion para poder listar al equipo, asi
-     * que se realinea en cada login. Si el token no trae roles no se toca nada:
-     * rolPrincipal() cae a CLIENTE por defecto y borraria un rol valido.
-     */
+    /** Realinea el rol guardado con el del token; si el token no trae roles no toca nada. */
     private UsuarioDto sincronizarRol(UsuarioDto usuario, IdentidadInterna identidad) {
         if (identidad.roles().isEmpty()) {
             return usuario;
@@ -84,13 +73,13 @@ public class MeController {
                 recienCreado);
     }
 
-    /** Azure AD manda el nombre en "name"; si el App Registration no lo expone, usamos el email. */
+    /** Toma el claim "name" y cae al email si no viene. */
     private String nombreDesde(Jwt jwt) {
         String nombre = jwt.getClaimAsString("name");
         return (nombre != null && !nombre.isBlank()) ? nombre : emailDesde(jwt);
     }
 
-    /** Segun como este configurado el tenant, el correo llega en "preferred_username", "email" o "upn". */
+    /** El correo llega en "preferred_username", "email" o "upn" segun el tenant. */
     private String emailDesde(Jwt jwt) {
         for (String claim : new String[]{"preferred_username", "email", "upn"}) {
             String valor = jwt.getClaimAsString(claim);

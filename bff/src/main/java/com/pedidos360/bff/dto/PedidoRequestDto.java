@@ -3,7 +3,6 @@ package com.pedidos360.bff.dto;
 import java.util.List;
 import java.util.UUID;
 
-/** Lo que el BFF envia a POST /internal/pedidos, con el clienteId ya resuelto. */
 public record PedidoRequestDto(
         UUID clienteId,
         String direccionOrigen,

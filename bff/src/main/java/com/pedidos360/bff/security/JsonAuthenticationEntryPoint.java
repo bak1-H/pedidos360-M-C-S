@@ -14,10 +14,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-/**
- * Se dispara cuando NO hay token, o el token es invalido: firma mala, expirado,
- * issuer distinto, o audiencia que no corresponde. Siempre 401 con JSON.
- */
+/** Responde 401 en JSON cuando falta el token o es invalido. */
 @Slf4j
 @Component
 @RequiredArgsConstructor

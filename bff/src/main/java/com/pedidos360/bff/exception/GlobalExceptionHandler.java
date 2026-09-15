@@ -9,11 +9,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-/**
- * Que un microservicio interno falle no puede convertirse en un 500 opaco:
- * lo traducimos a 502/504 para que Angular sepa que el problema esta abajo
- * y no en el token del usuario.
- */
+/** Traduce fallas de los microservicios a 502/504 para no confundirlas con un error de token. */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {

@@ -10,10 +10,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Test del indicador que mas se pierde: si solo validas la firma, un token
- * emitido por Azure AD para OTRA aplicacion del mismo tenant entra igual.
- */
 class AudienceValidatorTest {
 
     private static final String AUDIENCIA_ESPERADA = "api://pedidos360-bff";

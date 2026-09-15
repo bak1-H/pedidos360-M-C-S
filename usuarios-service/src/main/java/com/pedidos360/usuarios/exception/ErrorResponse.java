@@ -3,10 +3,6 @@ package com.pedidos360.usuarios.exception;
 import java.time.Instant;
 import java.util.Map;
 
-/**
- * Cuerpo JSON uniforme para todos los errores. La rubrica pide "codigos de error
- * adecuados": nunca devolvemos HTML generico ni un 500 disfrazado.
- */
 public record ErrorResponse(
         int status,
         String codigo,

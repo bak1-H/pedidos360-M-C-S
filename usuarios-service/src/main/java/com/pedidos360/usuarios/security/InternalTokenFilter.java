@@ -14,14 +14,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
-/**
- * Los endpoints /internal/** no son publicos. La proteccion principal es de red
- * (solo el BFF los alcanza), pero el SDD pide "como minimo un header interno simple"
- * para que no queden completamente abiertos si la regla de red falla.
- *
- * No reemplaza a la validacion JWT: esa vive en el BFF. Aca solo comprobamos que
- * quien llama sea nuestro propio BFF.
- */
+/** Comprueba que quien llama a /internal/** sea el BFF; la validacion del JWT vive alla. */
 @RequiredArgsConstructor
 public class InternalTokenFilter extends OncePerRequestFilter {
 
@@ -51,7 +44,7 @@ public class InternalTokenFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    /** Comparacion en tiempo constante, para no filtrar el token por timing. */
+    /** Comparacion en tiempo constante para no filtrar el token por timing. */
     private boolean coincide(String recibido, String esperado) {
         if (recibido == null || esperado == null) {
             return false;

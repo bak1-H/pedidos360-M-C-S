@@ -8,14 +8,7 @@ import org.springframework.security.oauth2.jwt.JwtClaimValidator;
 
 import java.util.List;
 
-/**
- * Valida el claim "aud": el token tiene que haber sido emitido PARA esta API.
- *
- * Por que importa (SDD 7.3): sin esto, cualquier token firmado por el mismo tenant
- * de Azure AD -- incluso uno emitido para otra aplicacion distinta -- pasaria la
- * validacion de firma e issuer y seria aceptado. Es la diferencia entre el 100% y
- * el 60-80% en el indicador del 40%.
- */
+/** Exige que el claim "aud" sea esta API: un token de otra app del mismo tenant no entra. */
 public class AudienceValidator implements OAuth2TokenValidator<Jwt> {
 
     private final JwtClaimValidator<List<String>> delegado;

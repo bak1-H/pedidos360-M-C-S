@@ -25,14 +25,7 @@ export class AuthService {
   private readonly activeAccount = signal<AccountInfo | null>(null);
   private readonly accessTokenRoles = signal<string[] | null>(null);
 
-  /**
-   * homeAccountId del usuario para el que ya se pidieron los roles. Evita
-   * repetir acquireTokenSilent en cada resincronizacion de cuenta: sin esto,
-   * cualquier trigger reactivo (inProgress$, interceptor, etc.) termina
-   * pidiendo el token de nuevo, lo que genera mas eventos de MSAL, lo que
-   * dispara mas resincronizaciones, en un ciclo que en la practica se
-   * convierte en miles de requests por minuto.
-   */
+  /** Evita repetir acquireTokenSilent en cada resincronizacion: sin esto MSAL entra en bucle. */
   private rolesLoadedForAccount: string | null = null;
 
   readonly refreshState = signal<SessionState>('idle');
@@ -42,21 +35,11 @@ export class AuthService {
   readonly displayName = computed(() => this.resolveDisplayName(this.activeAccount()));
   readonly email = computed(() => this.resolveEmail(this.activeAccount()));
 
-  /**
-   * Los App Roles estan definidos y asignados en el App Registration de la API
-   * (pedidos360-api), no en el del SPA. Por eso NO aparecen en el idToken (emitido
-   * para el SPA) sino en el accessToken pedido con el scope de la API — el mismo
-   * que MsalInterceptor adjunta en cada llamada al BFF.
-   */
+  /** Los App Roles viven en el accessToken de la API, no en el idToken del SPA. */
   readonly roles = computed(() => this.accessTokenRoles() ?? this.resolveRoles(this.activeAccount()));
 
   constructor() {
-    /**
-     * Esta suscripcion SOLO mantiene sincronizados nombre/email para la UI.
-     * A proposito NO dispara ninguna llamada de red (ver loadRolesOnce): con
-     * MsalInterceptor pidiendo tokens en cada request al BFF, inProgress$
-     * emite constantemente, y cualquier efecto secundario aca se amplifica.
-     */
+    /** Solo sincroniza nombre y email: cualquier llamada de red aca se amplifica en bucle. */
     this.broadcastService.inProgress$
       .pipe(
         filter((status: InteractionStatus) => status === InteractionStatus.None),
@@ -155,13 +138,7 @@ export class AuthService {
     this.updateActiveAccount(selectedAccount);
   }
 
-  /**
-   * MSAL devuelve una instancia de AccountInfo nueva en cada llamada, incluso
-   * para la misma cuenta. Las signals de Angular comparan por referencia, asi
-   * que comparamos por homeAccountId para no generar una emision — y por lo
-   * tanto un retrigger de quien dependa de esta signal — cuando la cuenta
-   * logica no cambio realmente.
-   */
+  /** Compara por homeAccountId: MSAL devuelve un AccountInfo nuevo en cada llamada. */
   private updateActiveAccount(account: AccountInfo | null): void {
     const current = this.activeAccount();
     if (current?.homeAccountId === account?.homeAccountId) {
@@ -171,7 +148,7 @@ export class AuthService {
     this.activeAccount.set(account);
   }
 
-  /** Login/redirect/refresh ya traen un accessToken valido para loginScopes: se decodifica directo, sin pedir otro. */
+  /** El resultado ya trae un accessToken valido: se decodifica sin pedir otro. */
   private applyAuthResult(result: AuthenticationResult): void {
     const account = result.account ?? null;
 
@@ -187,7 +164,7 @@ export class AuthService {
     }
   }
 
-  /** Unico caso que necesita un acquireTokenSilent aparte: sesion recuperada del storage al recargar la pagina. */
+  /** Unico caso que pide token aparte: sesion recuperada del storage al recargar. */
   private async loadRolesOnce(account: AccountInfo): Promise<void> {
     if (this.rolesLoadedForAccount === account.homeAccountId) {
       return;

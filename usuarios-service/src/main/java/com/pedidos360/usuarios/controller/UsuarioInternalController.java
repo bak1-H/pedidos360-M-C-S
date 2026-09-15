@@ -19,10 +19,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Endpoints internos: NO se exponen a Angular. Solo el BFF los alcanza
- * (regla de red + header X-Internal-Token, ver InternalTokenFilter).
- */
 @RestController
 @RequestMapping("/internal/usuarios")
 @RequiredArgsConstructor

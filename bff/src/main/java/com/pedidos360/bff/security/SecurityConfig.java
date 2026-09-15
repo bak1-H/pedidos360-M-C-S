@@ -16,20 +16,7 @@ import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 
-/**
- * Validacion JWT contra Azure AD. Este es el componente que evalua el 40% de la
- * rubrica del encargo: "el BFF debe validar el token recibido con el IDaaS y solo
- * permitir consumir el endpoint si el token es valido".
- *
- * Las cuatro validaciones exigidas y donde ocurre cada una:
- *
- *   FIRMA     -> NimbusJwtDecoder descarga las llaves publicas del JWKS de Azure AD
- *                y verifica la firma RS256. Nunca se desactiva.
- *   VIGENCIA  -> JwtTimestampValidator (exp / nbf), incluido en createDefaultWithIssuer.
- *   ISSUER    -> JwtIssuerValidator, tambien incluido en createDefaultWithIssuer.
- *   AUDIENCIA -> AudienceValidator, propio. Sin el, un token de OTRA app del mismo
- *                tenant pasaria igual.
- */
+/** Valida firma, vigencia, issuer y audiencia del token de Azure AD. */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -53,25 +40,20 @@ public class SecurityConfig {
                                            JsonAccessDeniedHandler accessDeniedHandler) throws Exception {
 
         http
-                // API stateless que se autentica con Bearer token: no hay sesion ni formulario,
-                // asi que CSRF no aplica.
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .sessionManagement(sesion -> sesion.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
-                        // Lo unico publico: el health check del gateway/orquestador.
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
 
-                        // --- Autorizacion por rol, segun SDD seccion 4.1 ---
                         .requestMatchers(HttpMethod.GET, "/bff/me").authenticated()
 
-                        // El orden importa: /mios tiene que evaluarse ANTES que /{id}
+                        // /mios debe ir antes que /{id} o lo captura el comodin.
                         .requestMatchers(HttpMethod.GET, "/bff/pedidos/mios").hasRole("CLIENTE")
                         .requestMatchers(HttpMethod.POST, "/bff/pedidos").hasRole("CLIENTE")
                         .requestMatchers(HttpMethod.GET, "/bff/pedidos").hasRole("ADMIN")
-                        // El "dueño o ADMIN" no se puede expresar aca: se verifica en el
-                        // controller comparando el sub del token contra el clienteId del pedido.
+                        // Dueño o ADMIN se verifica en el controller, no aca.
                         .requestMatchers(HttpMethod.GET, "/bff/pedidos/*").authenticated()
 
                         .requestMatchers(HttpMethod.GET, "/bff/envios/mios").hasRole("REPARTIDOR")
@@ -81,9 +63,7 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/bff/usuarios").hasRole("ADMIN")
 
-                        // Cualquier otro /bff/** exige token valido...
                         .requestMatchers("/bff/**").authenticated()
-                        // ...y todo lo que no sea /bff/** simplemente no existe hacia afuera.
                         .anyRequest().denyAll())
 
                 .oauth2ResourceServer(oauth2 -> oauth2
@@ -98,13 +78,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /**
-     * Usamos jwk-set-uri en vez de issuer-uri para construir el decoder porque
-     * JwtDecoders.fromIssuerLocation() hace una llamada de red al arrancar: si Azure
-     * no responde, la aplicacion no levanta. Con withJwkSetUri las llaves se piden
-     * de forma perezosa, en el primer token que llega. El issuer igual se valida,
-     * via JwtValidators.createDefaultWithIssuer.
-     */
+    /** Pide el JWKS de forma perezosa: la app arranca aunque Azure no responda. */
     @Bean
     public JwtDecoder jwtDecoder() {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
