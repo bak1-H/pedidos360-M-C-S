@@ -480,6 +480,16 @@ h1 {
 	gap: 32px;
 }
 
+.workspace > router-outlet {
+	display: none;
+}
+
+.workspace > *:not(router-outlet) {
+	display: grid;
+	gap: 32px;
+	align-content: start;
+}
+
 .page-card,
 .page-card-soft {
 	padding: 24px;
