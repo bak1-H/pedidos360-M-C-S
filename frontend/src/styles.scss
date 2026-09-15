@@ -377,9 +377,8 @@ h1 {
 }
 
 .highlight-grid {
-	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
-	gap: 12px;
+	columns: 260px 3;
+	column-gap: 12px;
 	margin-bottom: 20px;
 }
 
@@ -487,31 +486,47 @@ h1 {
 }
 
 .page-grid {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	align-items: start;
-	gap: 12px;
+	columns: 340px 2;
+	column-gap: 12px;
 }
 
 .route-grid,
 .compact-grid {
-	grid-template-columns: repeat(3, minmax(0, 1fr));
+	columns: 260px 3;
 }
 
 .card-grid.one-column {
-	grid-template-columns: 1fr;
+	columns: 1;
 }
 
 .details-grid {
-	grid-template-columns: repeat(2, minmax(0, 1fr));
+	columns: 300px 2;
 }
 
 .stack-grid,
-.profile-grid,
+.profile-grid {
+	columns: 280px 2;
+	column-gap: 12px;
+}
+
 .form-grid {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 12px;
+}
+
+.highlight-grid > *,
+.metric-grid > *,
+.card-grid > *,
+.page-grid > *,
+.details-grid > *,
+.stack-grid > *,
+.profile-grid > *,
+.stats-strip > * {
+	break-inside: avoid;
+	-webkit-column-break-inside: avoid;
+	width: 100%;
+	margin: 0 0 12px;
 }
 
 .form-span-2 {
@@ -572,9 +587,8 @@ h1 {
 }
 
 .metric-grid {
-	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
-	gap: 12px;
+	columns: 200px 3;
+	column-gap: 12px;
 }
 
 .metric {
@@ -755,13 +769,12 @@ h1 {
 }
 
 .card-grid {
-	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
-	gap: 12px;
+	columns: 260px 3;
+	column-gap: 12px;
 }
 
 .card-grid.two {
-	grid-template-columns: repeat(2, minmax(0, 1fr));
+	columns: 340px 2;
 }
 
 .feature-list,
@@ -788,9 +801,8 @@ h1 {
 }
 
 .stats-strip {
-	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
-	gap: 10px;
+	columns: 180px 3;
+	column-gap: 10px;
 	margin-top: 8px;
 }
 
@@ -843,18 +855,7 @@ h1 {
 
 @media (max-width: 980px) {
 	.shell-header,
-	.page-grid,
-	.card-grid,
-	.card-grid.two,
-	.highlight-grid,
-	.stats-strip,
-	.route-grid,
-	.compact-grid,
-	.metric-grid,
-	.form-grid,
-	.profile-grid,
-	.details-grid,
-	.stack-grid {
+	.form-grid {
 		grid-template-columns: 1fr;
 	}
 
