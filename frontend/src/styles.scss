@@ -46,6 +46,10 @@
 
 	--shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
 	--shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.4);
+
+	--neon-edge: rgba(94, 106, 210, 0.42);
+	--neon-halo: 0 0 24px rgba(94, 106, 210, 0.22);
+	--neon-halo-strong: 0 0 32px rgba(94, 106, 210, 0.4);
 }
 
 html {
@@ -206,7 +210,8 @@ select {
 
 .nav-links a.active {
 	color: var(--text);
-	background: var(--surface-hover);
+	background: var(--primary-soft);
+	box-shadow: inset 0 0 0 1px var(--neon-edge), var(--neon-halo);
 }
 
 .nav-side {
@@ -334,7 +339,7 @@ h1 {
 .primary-button {
 	background: var(--primary);
 	color: #ffffff;
-	box-shadow: 0 0 0 0 var(--primary-glow);
+	box-shadow: var(--neon-halo);
 }
 
 .primary-button:hover:not(:disabled),
@@ -472,7 +477,7 @@ h1 {
 
 .workspace {
 	display: grid;
-	gap: 16px;
+	gap: 32px;
 }
 
 .page-card,
@@ -495,13 +500,24 @@ h1 {
 }
 
 .section-frame {
-	padding: 24px;
+	padding: 26px;
 	display: grid;
 	gap: 18px;
+	position: relative;
+	overflow: hidden;
 	border-radius: var(--radius);
 	background: var(--bg-elevated);
 	border: 1px solid var(--border);
 	box-shadow: var(--shadow-soft);
+}
+
+.section-frame::before,
+.page-card::before {
+	content: '';
+	position: absolute;
+	inset: 0 0 auto 0;
+	height: 1px;
+	background: linear-gradient(90deg, transparent, var(--neon-edge), transparent);
 }
 
 .section-head {
@@ -676,12 +692,19 @@ h1 {
 }
 
 .metric:hover {
-	border-color: var(--border-strong);
+	border-color: var(--neon-edge);
+	box-shadow: var(--neon-halo);
 }
 
 .metric.highlight {
 	background: linear-gradient(180deg, var(--primary-soft), var(--bg-raised) 70%);
-	border-color: rgba(94, 106, 210, 0.24);
+	border-color: var(--neon-edge);
+	box-shadow: var(--neon-halo);
+}
+
+.metric.highlight strong {
+	color: #c7ceff;
+	text-shadow: 0 0 18px rgba(94, 106, 210, 0.55);
 }
 
 .metric strong {
@@ -700,26 +723,46 @@ h1 {
 
 .route-card,
 .link-card {
-	padding: 18px;
+	padding: 20px;
 	border-radius: var(--radius-sm);
 	background: var(--bg-raised);
 	border: 1px solid var(--border);
 	display: grid;
 	gap: 10px;
+	position: relative;
+	overflow: hidden;
 	transition:
 		background var(--speed) var(--easing),
-		border-color var(--speed) var(--easing);
+		border-color var(--speed) var(--easing),
+		box-shadow var(--speed) var(--easing),
+		transform var(--speed) var(--easing);
 }
 
 .link-card {
 	cursor: pointer;
-	position: relative;
+}
+
+.link-card::after {
+	content: '';
+	position: absolute;
+	inset: 0 0 auto 0;
+	height: 1px;
+	background: linear-gradient(90deg, transparent, var(--neon-edge), transparent);
+	opacity: 0;
+	transition: opacity var(--speed) var(--easing);
 }
 
 .link-card:hover,
 .link-card:focus-within {
 	background: var(--surface-hover);
-	border-color: rgba(94, 106, 210, 0.32);
+	border-color: var(--neon-edge);
+	box-shadow: var(--neon-halo-strong);
+	transform: translateY(-2px);
+}
+
+.link-card:hover::after,
+.link-card:focus-within::after {
+	opacity: 1;
 }
 
 .route-card h3,
