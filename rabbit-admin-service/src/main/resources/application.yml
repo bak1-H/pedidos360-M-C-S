@@ -1,0 +1,31 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: rabbit-admin-service
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
+    connection-timeout: 3s
+
+internal:
+  token: ${INTERNAL_TOKEN}
+
+rabbit-admin:
+  protegidos:
+    nombres:
+      - pedidos360.eventos
+      - pedidos360.eventos.dlx
+    prefijos:
+      - amq.
+      - notificaciones.
+      - tickets.
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

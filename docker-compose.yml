@@ -1,4 +1,16 @@
 services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
   usuarios-service:
     build:
       context: .
@@ -8,6 +20,13 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: dev
       INTERNAL_TOKEN: dev-local-token
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   pedidos-service:
     build:
@@ -18,6 +37,13 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: dev
       INTERNAL_TOKEN: dev-local-token
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   envios-service:
     build:
@@ -28,6 +54,49 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: dev
       INTERNAL_TOKEN: dev-local-token
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  notificaciones-service:
+    build:
+      context: .
+      dockerfile: notificaciones-service/Dockerfile
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+      TICKETS_OUTPUT_DIR: /app/tickets
+    volumes:
+      - tickets:/app/tickets
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  rabbit-admin-service:
+    build:
+      context: .
+      dockerfile: rabbit-admin-service/Dockerfile
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      INTERNAL_TOKEN: dev-local-token
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   bff:
     build:
@@ -41,12 +110,14 @@ services:
       USUARIOS_SERVICE_URL: http://usuarios-service:8081
       PEDIDOS_SERVICE_URL: http://pedidos-service:8082
       ENVIOS_SERVICE_URL: http://envios-service:8083
+      RABBIT_ADMIN_SERVICE_URL: http://rabbit-admin-service:8085
       INTERNAL_TOKEN: dev-local-token
       CORS_ORIGINS: http://localhost:4200
     depends_on:
       - usuarios-service
       - pedidos-service
       - envios-service
+      - rabbit-admin-service
 
   frontend:
     build:
@@ -56,3 +127,6 @@ services:
       - "4200:80"
     depends_on:
       - bff
+
+volumes:
+  tickets:

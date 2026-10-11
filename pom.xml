@@ -26,5 +26,7 @@
         <module>usuarios-service</module>
         <module>pedidos-service</module>
         <module>envios-service</module>
+        <module>notificaciones-service</module>
+        <module>rabbit-admin-service</module>
     </modules>
 </project>

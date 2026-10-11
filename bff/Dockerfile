@@ -6,6 +6,8 @@ COPY bff/pom.xml bff/pom.xml
 COPY usuarios-service/pom.xml usuarios-service/pom.xml
 COPY pedidos-service/pom.xml pedidos-service/pom.xml
 COPY envios-service/pom.xml envios-service/pom.xml
+COPY notificaciones-service/pom.xml notificaciones-service/pom.xml
+COPY rabbit-admin-service/pom.xml rabbit-admin-service/pom.xml
 RUN chmod +x mvnw && ./mvnw -pl bff -q dependency:go-offline
 COPY bff/src bff/src
 RUN ./mvnw -pl bff -q clean package -DskipTests
