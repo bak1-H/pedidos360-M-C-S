@@ -33,6 +33,12 @@ export const routes: Routes = [
 		loadComponent: () => import('./features/notificaciones/notificaciones.component').then((module) => module.NotificacionesComponent),
 	},
 	{
+		path: 'rabbit',
+		canActivate: [MsalGuard, roleGuard],
+		data: { roles: ['ADMIN'] },
+		loadComponent: () => import('./features/rabbit-admin/rabbit-admin.component').then((module) => module.RabbitAdminComponent),
+	},
+	{
 		path: '**',
 		redirectTo: '',
 	},

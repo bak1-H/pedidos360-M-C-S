@@ -1,0 +1,204 @@
+<section class="section-frame" aria-labelledby="rabbit-titulo">
+  <div class="section-head">
+    <div class="stack">
+      <p class="eyebrow">Administración</p>
+      <h2 class="page-title" id="rabbit-titulo">RabbitMQ</h2>
+      <p class="page-copy">
+        Consulta colas y crea o elimina colas, exchanges y bindings. Los recursos protegidos no se pueden eliminar.
+      </p>
+    </div>
+  </div>
+
+  @if (exito()) {
+    <p class="panel-note" role="status">{{ exito() }}</p>
+  }
+
+  @if (error()) {
+    <p class="panel-note error" role="alert">{{ error() }}</p>
+  }
+</section>
+
+<section class="page-grid">
+  <article class="page-card">
+    <div class="section-head compact">
+      <div class="stack">
+        <p class="eyebrow">Colas</p>
+        <h3>Consultar o eliminar una cola</h3>
+      </div>
+    </div>
+
+    <form id="form-buscar-cola" class="form-grid" [formGroup]="buscarColaForm" (ngSubmit)="buscarCola()">
+      <label class="form-field form-span-2">
+        <span class="field-label">Nombre</span>
+        <input id="cola-buscar-nombre" class="input mono" type="text" formControlName="nombre" />
+        @if (invalido(buscarColaForm.controls.nombre)) {
+          <small class="panel-note error">{{ mensajeNombre }}</small>
+        }
+      </label>
+
+      <div class="toolbar form-span-2">
+        <button type="submit" class="primary-button" [disabled]="ocupado()">Buscar</button>
+        <button type="button" class="secondary-button" (click)="eliminarCola()" [disabled]="ocupado()">Eliminar cola</button>
+      </div>
+    </form>
+
+    @if (colaEncontrada(); as cola) {
+      <div class="empty-state compact" aria-live="polite">
+        <strong class="mono">{{ cola.nombre }}</strong>
+        <p>
+          {{ cola.mensajes === 1 ? '1 mensaje' : cola.mensajes + ' mensajes' }} ·
+          {{ cola.consumidores === 1 ? '1 consumidor' : cola.consumidores + ' consumidores' }}
+        </p>
+      </div>
+    }
+  </article>
+
+  <article class="page-card">
+    <div class="section-head compact">
+      <div class="stack">
+        <p class="eyebrow">Colas</p>
+        <h3>Crear una cola</h3>
+      </div>
+    </div>
+
+    <form id="form-crear-cola" class="form-grid" [formGroup]="crearColaForm" (ngSubmit)="crearCola()">
+      <label class="form-field form-span-2">
+        <span class="field-label">Nombre</span>
+        <input id="cola-crear-nombre" class="input mono" type="text" formControlName="nombre" />
+        @if (invalido(crearColaForm.controls.nombre)) {
+          <small class="panel-note error">{{ mensajeNombre }}</small>
+        }
+      </label>
+
+      <label class="form-field">
+        <span class="field-label">Dead letter exchange</span>
+        <input id="cola-crear-dlx" class="input mono" type="text" formControlName="deadLetterExchange" />
+        @if (invalido(crearColaForm.controls.deadLetterExchange)) {
+          <small class="panel-note error">{{ mensajeNombre }}</small>
+        }
+      </label>
+
+      <label class="form-field">
+        <span class="field-label">Dead letter routing key</span>
+        <input id="cola-crear-dlrk" class="input mono" type="text" formControlName="deadLetterRoutingKey" />
+      </label>
+
+      <label class="form-field form-span-2">
+        <span class="field-label">Durable</span>
+        <input type="checkbox" formControlName="durable" />
+      </label>
+
+      <div class="toolbar form-span-2">
+        <button type="submit" class="primary-button" [disabled]="ocupado()">Crear cola</button>
+      </div>
+    </form>
+  </article>
+
+  <article class="page-card">
+    <div class="section-head compact">
+      <div class="stack">
+        <p class="eyebrow">Exchanges</p>
+        <h3>Crear un exchange</h3>
+      </div>
+    </div>
+
+    <form id="form-crear-exchange" class="form-grid" [formGroup]="crearExchangeForm" (ngSubmit)="crearExchange()">
+      <label class="form-field">
+        <span class="field-label">Nombre</span>
+        <input id="exchange-crear-nombre" class="input mono" type="text" formControlName="nombre" />
+        @if (invalido(crearExchangeForm.controls.nombre)) {
+          <small class="panel-note error">{{ mensajeNombre }}</small>
+        }
+      </label>
+
+      <label class="form-field">
+        <span class="field-label">Tipo</span>
+        <select id="exchange-crear-tipo" class="select" formControlName="tipo">
+          @for (tipo of tiposExchange; track tipo) {
+            <option [value]="tipo">{{ tipo }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="form-field form-span-2">
+        <span class="field-label">Durable</span>
+        <input type="checkbox" formControlName="durable" />
+      </label>
+
+      <div class="toolbar form-span-2">
+        <button type="submit" class="primary-button" [disabled]="ocupado()">Crear exchange</button>
+      </div>
+    </form>
+  </article>
+
+  <article class="page-card">
+    <div class="section-head compact">
+      <div class="stack">
+        <p class="eyebrow">Exchanges</p>
+        <h3>Eliminar un exchange</h3>
+      </div>
+    </div>
+
+    <form id="form-eliminar-exchange" class="form-grid" [formGroup]="eliminarExchangeForm" (ngSubmit)="eliminarExchange()">
+      <label class="form-field form-span-2">
+        <span class="field-label">Nombre</span>
+        <input id="exchange-eliminar-nombre" class="input mono" type="text" formControlName="nombre" />
+        @if (invalido(eliminarExchangeForm.controls.nombre)) {
+          <small class="panel-note error">{{ mensajeNombre }}</small>
+        }
+      </label>
+
+      <div class="toolbar form-span-2">
+        <button type="submit" class="secondary-button" [disabled]="ocupado()">Eliminar exchange</button>
+      </div>
+    </form>
+  </article>
+
+  <article class="page-card">
+    <div class="section-head compact">
+      <div class="stack">
+        <p class="eyebrow">Bindings</p>
+        <h3>Crear o eliminar un binding</h3>
+      </div>
+    </div>
+
+    <form id="form-binding" class="form-grid" [formGroup]="bindingForm" (ngSubmit)="crearBinding()">
+      <label class="form-field">
+        <span class="field-label">Exchange</span>
+        <input id="binding-exchange" class="input mono" type="text" formControlName="exchange" />
+        @if (invalido(bindingForm.controls.exchange)) {
+          <small class="panel-note error">{{ mensajeNombre }}</small>
+        }
+      </label>
+
+      <label class="form-field">
+        <span class="field-label">Destino</span>
+        <input id="binding-destino" class="input mono" type="text" formControlName="destino" />
+        @if (invalido(bindingForm.controls.destino)) {
+          <small class="panel-note error">{{ mensajeNombre }}</small>
+        }
+      </label>
+
+      <label class="form-field">
+        <span class="field-label">Tipo de destino</span>
+        <select id="binding-tipo-destino" class="select" formControlName="tipoDestino">
+          @for (tipo of tiposDestino; track tipo) {
+            <option [value]="tipo">{{ tipo }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="form-field">
+        <span class="field-label">Routing key</span>
+        <input id="binding-routing-key" class="input mono" type="text" formControlName="routingKey" />
+      </label>
+
+      <div class="toolbar form-span-2">
+        <button type="submit" class="primary-button" [disabled]="ocupado()">Crear binding</button>
+        <button id="binding-eliminar" type="button" class="secondary-button" (click)="eliminarBinding()" [disabled]="ocupado()">
+          Eliminar binding
+        </button>
+      </div>
+    </form>
+  </article>
+</section>

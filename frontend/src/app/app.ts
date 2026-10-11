@@ -31,6 +31,7 @@ export class App {
     { label: 'Envíos', path: '/envios', roles: ['REPARTIDOR'] },
     { label: 'Administración', path: '/admin', roles: ['ADMIN'] },
     { label: 'Notificaciones', path: '/notificaciones', roles: ['ADMIN'] },
+    { label: 'RabbitMQ', path: '/rabbit', roles: ['ADMIN'] },
   ];
 
   protected readonly visibleNavigation = computed(() =>
