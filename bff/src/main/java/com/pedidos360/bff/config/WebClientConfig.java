@@ -44,4 +44,16 @@ public class WebClientConfig {
                 .defaultHeader("X-Internal-Token", internalToken)
                 .build();
     }
+
+    @Bean
+    public WebClient rabbitAdminWebClient(
+            WebClient.Builder builder,
+            @Value("${servicios.rabbit-admin-url}") String rabbitAdminUrl,
+            @Value("${servicios.internal-token}") String internalToken) {
+
+        return builder
+                .baseUrl(rabbitAdminUrl)
+                .defaultHeader("X-Internal-Token", internalToken)
+                .build();
+    }
 }

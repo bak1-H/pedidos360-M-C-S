@@ -63,6 +63,8 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/bff/usuarios").hasRole("ADMIN")
 
+                        .requestMatchers("/bff/rabbit/**").hasRole("ADMIN")
+
                         .requestMatchers("/bff/**").authenticated()
                         .anyRequest().denyAll())
 

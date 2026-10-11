@@ -39,6 +39,15 @@ public class GlobalExceptionHandler {
                         "No se pudo contactar un servicio interno", request.getRequestURI()));
     }
 
+    @ExceptionHandler(RabbitAdminRechazoException.class)
+    public ResponseEntity<ErrorResponse> rabbitAdminRechazo(
+            RabbitAdminRechazoException ex, HttpServletRequest request) {
+
+        return ResponseEntity
+                .status(ex.getStatus())
+                .body(ErrorResponse.de(ex.getStatus(), "RABBIT_ADMIN_RECHAZO", ex.getMessage(), request.getRequestURI()));
+    }
+
     @ExceptionHandler(RecursoNoEncontradoException.class)
     public ResponseEntity<ErrorResponse> recursoNoEncontrado(
             RecursoNoEncontradoException ex, HttpServletRequest request) {
