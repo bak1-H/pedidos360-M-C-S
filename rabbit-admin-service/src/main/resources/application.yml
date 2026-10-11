@@ -23,6 +23,7 @@ rabbit-admin:
       - amq.
       - notificaciones.
       - tickets.
+      - pedidos.
 
 management:
   endpoints:

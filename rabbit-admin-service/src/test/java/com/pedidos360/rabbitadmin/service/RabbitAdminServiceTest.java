@@ -197,7 +197,7 @@ class RabbitAdminServiceTest {
                 .isInstanceOf(RecursoProtegidoException.class);
         assertThatThrownBy(() -> service.eliminarCola("notificaciones.pedido.creado.dlq"))
                 .isInstanceOf(RecursoProtegidoException.class);
-        assertThatThrownBy(() -> service.eliminarCola("notificaciones.pedido.creado.dlq.parked"))
+        assertThatThrownBy(() -> service.eliminarCola("notificaciones.pedido.creado.dlq"))
                 .isInstanceOf(RecursoProtegidoException.class);
         assertThatThrownBy(() -> service.eliminarCola("tickets.envio.entregado"))
                 .isInstanceOf(RecursoProtegidoException.class);

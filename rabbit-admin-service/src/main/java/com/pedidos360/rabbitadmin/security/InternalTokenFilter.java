@@ -38,7 +38,7 @@ public class InternalTokenFilter implements Filter {
         if (!isValid(receivedToken)) {
             httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             httpResponse.setContentType("application/json");
-            httpResponse.getWriter().write("{\"error\":\"unauthorized\",\"message\":\"X-Internal-Token invalido o ausente\"}");
+            httpResponse.getWriter().write("{\"error\":\"unauthorized\",\"message\":\"X-Internal-Token inválido o ausente\"}");
             return;
         }
 
