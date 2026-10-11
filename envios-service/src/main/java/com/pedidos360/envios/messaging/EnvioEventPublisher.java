@@ -2,7 +2,6 @@ package com.pedidos360.envios.messaging;
 
 import com.pedidos360.envios.config.RabbitTopologyProperties;
 import com.pedidos360.envios.event.EnvioAsignadoEvent;
-import com.pedidos360.envios.event.EnvioEntregadoEvent;
 import com.pedidos360.envios.event.EnvioEstadoCambiadoEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,11 +31,6 @@ public class EnvioEventPublisher {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void alCambiarEstado(EnvioEstadoCambiadoEvent event) {
         publicar(topology.routingKeys().envioEstadoCambiado(), event);
-    }
-
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void alEntregarEnvio(EnvioEntregadoEvent event) {
-        publicar(topology.routingKeys().envioEntregado(), event);
     }
 
     private void publicar(String routingKey, Object event) {

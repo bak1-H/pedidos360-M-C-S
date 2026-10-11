@@ -12,4 +12,8 @@ public interface EnvioRepository extends JpaRepository<Envio, UUID> {
     List<Envio> findByRepartidorId(UUID repartidorId);
 
     Optional<Envio> findByPedidoId(UUID pedidoId);
+
+    boolean existsByPedidoId(UUID pedidoId);
+
+    List<Envio> findAllByOrderByFechaAsignacionDesc();
 }

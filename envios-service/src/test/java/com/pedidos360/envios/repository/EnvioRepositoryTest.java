@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -54,5 +55,39 @@ class EnvioRepositoryTest {
 
         assertThat(porRepartidor).hasSize(1);
         assertThat(porPedido).isPresent();
+    }
+
+    @Test
+    void unPedidoRepetidoLanzaUnaViolacionQueSeReconoceComoDeUnicidad() {
+        UUID pedidoId = UUID.randomUUID();
+        Envio primero = new Envio();
+        primero.setPedidoId(pedidoId);
+        Envio segundo = new Envio();
+        segundo.setPedidoId(pedidoId);
+        envioRepository.saveAndFlush(primero);
+
+        Throwable falla = org.assertj.core.api.Assertions.catchThrowable(() -> envioRepository.saveAndFlush(segundo));
+
+        assertThat(falla).isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+        assertThat(com.pedidos360.envios.exception.ViolacionUnicidad.esDeUnicidad(falla)).isTrue();
+    }
+
+    @Test
+    void existePorPedidoIdYListaMasRecientesPrimero() {
+        UUID pedidoViejo = UUID.randomUUID();
+        UUID pedidoNuevo = UUID.randomUUID();
+        Envio viejo = new Envio();
+        viejo.setPedidoId(pedidoViejo);
+        viejo.setFechaAsignacion(LocalDateTime.now().minusDays(1));
+        Envio nuevo = new Envio();
+        nuevo.setPedidoId(pedidoNuevo);
+        nuevo.setFechaAsignacion(LocalDateTime.now());
+        envioRepository.saveAndFlush(viejo);
+        envioRepository.saveAndFlush(nuevo);
+
+        assertThat(envioRepository.existsByPedidoId(pedidoViejo)).isTrue();
+        assertThat(envioRepository.existsByPedidoId(UUID.randomUUID())).isFalse();
+        assertThat(envioRepository.findAllByOrderByFechaAsignacionDesc())
+                .extracting(Envio::getPedidoId).containsExactly(pedidoNuevo, pedidoViejo);
     }
 }

@@ -20,7 +20,6 @@ rabbitmq:
   routing-keys:
     envio-asignado: envio.asignado
     envio-estado-cambiado: envio.estado_cambiado
-    envio-entregado: envio.entregado
 
 internal:
   token: ${INTERNAL_TOKEN}

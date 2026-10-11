@@ -1,7 +1,9 @@
 package com.pedidos360.envios.messaging;
 
 import com.pedidos360.envios.config.RabbitTopologyProperties;
-import com.pedidos360.envios.event.EnvioEntregadoEvent;
+import com.pedidos360.envios.event.EnvioAsignadoEvent;
+import com.pedidos360.envios.event.EnvioEstadoCambiadoEvent;
+import com.pedidos360.envios.model.EstadoEnvio;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -24,24 +26,34 @@ class EnvioEventPublisherTest {
 
     private final RabbitTopologyProperties topology = new RabbitTopologyProperties(
             "pedidos360.eventos",
-            new RabbitTopologyProperties.RoutingKeys("envio.asignado", "envio.estado_cambiado", "envio.entregado"));
+            new RabbitTopologyProperties.RoutingKeys("envio.asignado", "envio.estado_cambiado"));
 
-    private final EnvioEntregadoEvent event = new EnvioEntregadoEvent(
+    private final EnvioAsignadoEvent asignado = new EnvioAsignadoEvent(
             UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), LocalDateTime.now());
 
-    @Test
-    void publicaElEventoDeEntregaConSuRoutingKey() {
-        new EnvioEventPublisher(rabbitTemplate, topology).alEntregarEnvio(event);
+    private final EnvioEstadoCambiadoEvent estadoCambiado = new EnvioEstadoCambiadoEvent(
+            UUID.randomUUID(), UUID.randomUUID(), EstadoEnvio.EN_TRANSITO, "Salio a reparto", LocalDateTime.now());
 
-        verify(rabbitTemplate).convertAndSend("pedidos360.eventos", "envio.entregado", event);
+    @Test
+    void publicaElEnvioAsignadoConSuRoutingKey() {
+        new EnvioEventPublisher(rabbitTemplate, topology).alAsignarEnvio(asignado);
+
+        verify(rabbitTemplate).convertAndSend("pedidos360.eventos", "envio.asignado", asignado);
+    }
+
+    @Test
+    void publicaElCambioDeEstadoConSuRoutingKey() {
+        new EnvioEventPublisher(rabbitTemplate, topology).alCambiarEstado(estadoCambiado);
+
+        verify(rabbitTemplate).convertAndSend("pedidos360.eventos", "envio.estado_cambiado", estadoCambiado);
     }
 
     @Test
     void unaFallaDelBrokerNoSePropaga() {
         doThrow(new AmqpConnectException(new RuntimeException("broker caido")))
-                .when(rabbitTemplate).convertAndSend("pedidos360.eventos", "envio.entregado", event);
+                .when(rabbitTemplate).convertAndSend("pedidos360.eventos", "envio.asignado", asignado);
 
-        assertThatCode(() -> new EnvioEventPublisher(rabbitTemplate, topology).alEntregarEnvio(event))
+        assertThatCode(() -> new EnvioEventPublisher(rabbitTemplate, topology).alAsignarEnvio(asignado))
                 .doesNotThrowAnyException();
     }
 }

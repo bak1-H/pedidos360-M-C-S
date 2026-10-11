@@ -33,6 +33,11 @@ public class EnvioInternalController {
         return ResponseEntity.status(HttpStatus.CREATED).body(envioService.crear(request));
     }
 
+    @GetMapping
+    public ResponseEntity<List<EnvioResponseDTO>> listarTodos() {
+        return ResponseEntity.ok(envioService.listarTodos());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<EnvioResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(envioService.buscarPorId(id));
