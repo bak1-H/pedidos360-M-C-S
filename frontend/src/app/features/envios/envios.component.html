@@ -1,7 +1,7 @@
 <section class="section-frame">
   <div class="section-head">
     <div class="stack">
-      <p class="eyebrow">Envios</p>
+      <p class="eyebrow">Envíos</p>
       <h2 class="page-title">Entregas asignadas a ti</h2>
       <p class="page-copy">
         Revisa las entregas que tienes en ruta y actualiza su estado a medida que avanzas.
@@ -21,8 +21,13 @@
       <strong>{{ envios().length }}</strong>
       <small>en total</small>
     </article>
+    <article class="metric">
+      <span class="metric-label">Pendientes</span>
+      <strong>{{ pendientes() }}</strong>
+      <small>por iniciar</small>
+    </article>
     <article class="metric highlight">
-      <span class="metric-label">En transito</span>
+      <span class="metric-label">En tránsito</span>
       <strong>{{ enTransito() }}</strong>
       <small>en ruta ahora</small>
     </article>
@@ -30,6 +35,11 @@
       <span class="metric-label">Entregados</span>
       <strong>{{ entregados() }}</strong>
       <small>completados</small>
+    </article>
+    <article class="metric">
+      <span class="metric-label">Fallidos</span>
+      <strong>{{ fallidos() }}</strong>
+      <small>sin completar</small>
     </article>
   </div>
 </section>
@@ -41,33 +51,33 @@
         <p class="eyebrow">Actualizar entrega {{ referencia(envio.id) }}</p>
         <h3>Pedido {{ referencia(envio.pedidoId) }}</h3>
       </div>
-      <span class="badge badge-warning">{{ estadoLegible(envio.estadoEnvio) }}</span>
+      <span [class]="'badge ' + claseBadge(envio.estadoEnvio)">{{ estadoLegible(envio.estadoEnvio) }}</span>
     </div>
 
     <form class="form-grid" [formGroup]="cambioEstadoForm" (ngSubmit)="guardarEstado()">
       <label class="form-field">
         <span class="field-label">Nuevo estado</span>
         <select class="select" formControlName="estadoEnvio">
-          @for (estado of estados; track estado.valor) {
+          @for (estado of estados(); track estado.valor) {
             <option [value]="estado.valor">{{ estado.etiqueta }}</option>
           }
         </select>
       </label>
 
       <label class="form-field">
-        <span class="field-label">Que paso</span>
+        <span class="field-label">¿Qué pasó?</span>
         <input
           class="input"
           formControlName="descripcionEvento"
-          placeholder="Ej: entregado en conserjeria"
+          placeholder="Ej: entregado en conserjería"
         />
       </label>
 
       <div class="toolbar form-span-2">
-        <button type="submit" class="primary-button" [disabled]="saving()">
+        <button type="submit" class="primary-button" [disabled]="saving() || !estados().length">
           {{ saving() ? 'Guardando...' : 'Guardar estado' }}
         </button>
-        <button type="button" class="secondary-button" (click)="cancelarSeleccion()">Cancelar</button>
+        <button type="button" class="secondary-button" (click)="cancelarSeleccion()" [disabled]="saving()">Cancelar</button>
       </div>
     </form>
   </section>
@@ -79,7 +89,7 @@
       <p class="eyebrow">Listado</p>
       <h3>Tus entregas</h3>
     </div>
-    <span class="badge">{{ envios().length }} envios</span>
+    <span class="badge">{{ envios().length }} envíos</span>
   </div>
 
   @if (feedback()) {
@@ -90,7 +100,11 @@
     <p class="panel-note error">{{ error() }}</p>
   }
 
-  @if (loading()) {
+  @if (errorCarga()) {
+    <p class="panel-note error">{{ errorCarga() }}</p>
+  }
+
+  @if (loading() && !envios().length) {
     <div class="empty-state">Cargando tus entregas...</div>
   } @else if (envios().length) {
     <div class="table-wrap">
@@ -105,16 +119,20 @@
           </tr>
         </thead>
         <tbody>
-          @for (envio of envios(); track envio.id) {
+          @for (envio of enviosOrdenados(); track envio.id) {
             <tr>
               <td>{{ referencia(envio.id) }}</td>
               <td>{{ referencia(envio.pedidoId) }}</td>
-              <td><span class="badge badge-warning">{{ estadoLegible(envio.estadoEnvio) }}</span></td>
+              <td><span [class]="'badge ' + claseBadge(envio.estadoEnvio)">{{ estadoLegible(envio.estadoEnvio) }}</span></td>
               <td>{{ fecha(envio.fechaEntregaEstimada, 'Sin estimar') }}</td>
               <td>
-                <button type="button" class="inline-button" (click)="seleccionarEnvio(envio)">
-                  Actualizar estado
-                </button>
+                @if (finalizado(envio.estadoEnvio)) {
+                  <small class="panel-note">Entrega finalizada</small>
+                } @else {
+                  <button type="button" class="inline-button" (click)="seleccionarEnvio(envio)" [disabled]="saving()">
+                    Actualizar estado
+                  </button>
+                }
               </td>
             </tr>
           }
@@ -124,7 +142,7 @@
   } @else {
     <div class="empty-state">
       <strong>No tienes entregas asignadas.</strong>
-      <p>Cuando un administrador te asigne un envio, aparecera en esta lista.</p>
+      <p>Cuando un administrador te asigne un envío, aparecerá en esta lista.</p>
     </div>
   }
 </section>

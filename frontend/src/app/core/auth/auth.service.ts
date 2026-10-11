@@ -58,7 +58,7 @@ export class AuthService {
         return;
       }
     } catch {
-      this.lastMessage.set('No se pudo completar el login por redireccion.');
+      this.lastMessage.set('No se pudo completar el login por redirección.');
     }
 
     this.syncActiveAccount();
@@ -185,7 +185,7 @@ export class AuthService {
 
   private resolveDisplayName(account: AccountInfo | null): string {
     if (!account) {
-      return 'Sesion no iniciada';
+      return 'Sesión no iniciada';
     }
 
     const claims = account.idTokenClaims as ClaimsWithRoles | undefined;

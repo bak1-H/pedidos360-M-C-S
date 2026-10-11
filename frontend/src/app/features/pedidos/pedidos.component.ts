@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
@@ -8,7 +8,16 @@ import {
   PedidoConTrackingResponse,
   PedidoResponseDto,
 } from '../../core/services/bff.service';
+import { cargaEncolada } from '../../shared/carga-encolada';
 import { etiquetaEstado, fechaLegible, referenciaCorta } from '../../shared/referencia';
+import {
+  EnviosCargados,
+  EnviosPorPedido,
+  cargarEnviosPorPedido,
+  claseEstado,
+  enviosDesdeListado,
+  estadoEfectivo,
+} from '../../shared/seguimiento';
 
 @Component({
   selector: 'app-pedidos',
@@ -18,30 +27,35 @@ import { etiquetaEstado, fechaLegible, referenciaCorta } from '../../shared/refe
 })
 export class PedidosComponent {
   private readonly auth = inject(AuthService);
+  private readonly destroyRef = inject(DestroyRef);
+  private destruido = false;
   private readonly bff = inject(BffService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly pedidos = signal<PedidoResponseDto[]>([]);
   protected readonly selectedPedido = signal<PedidoConTrackingResponse | null>(null);
+  protected readonly envios = signal<EnviosPorPedido>({});
   protected readonly loading = signal(false);
+  protected readonly cargandoDetalle = signal(false);
   protected readonly submitting = signal(false);
   protected readonly feedback = signal('');
   protected readonly error = signal('');
+  protected readonly errorCarga = signal('');
 
   protected readonly isAdmin = () => this.auth.hasAnyRole(['ADMIN']);
   protected readonly puedeCrear = () => this.auth.hasAnyRole(['CLIENTE']);
 
-  protected readonly enCamino = computed(
-    () => this.pedidos().filter((pedido) => pedido.estado === 'DESPACHADO').length,
-  );
-  protected readonly entregados = computed(
-    () => this.pedidos().filter((pedido) => pedido.estado === 'ENTREGADO').length,
+  protected readonly enCamino = computed(() => this.contar('EN_TRANSITO'));
+  protected readonly entregados = computed(() => this.contar('ENTREGADO'));
+  protected readonly fallidos = computed(() => this.contar('FALLIDO'));
+  protected readonly otros = computed(
+    () => this.pedidos().length - this.enCamino() - this.entregados() - this.fallidos(),
   );
 
   protected readonly tiposPaquete = [
     { valor: 'DOCUMENTO', etiqueta: 'Documento' },
     { valor: 'CAJA', etiqueta: 'Caja' },
-    { valor: 'FRAGIL', etiqueta: 'Fragil' },
+    { valor: 'FRAGIL', etiqueta: 'Frágil' },
   ];
 
   protected readonly pedidoForm = this.fb.nonNullable.group({
@@ -60,8 +74,16 @@ export class PedidosComponent {
   protected readonly referencia = referenciaCorta;
   protected readonly fecha = fechaLegible;
   protected readonly estadoLegible = etiquetaEstado;
+  protected readonly claseBadge = claseEstado;
+  protected readonly estadoEfectivo = estadoEfectivo;
+
+  readonly cargarPedidos = cargaEncolada(() => this.cargarUnaVez());
 
   constructor() {
+    this.destroyRef.onDestroy(() => {
+      this.destruido = true;
+    });
+
     effect(() => {
       const authenticated = this.auth.isAuthenticated();
 
@@ -70,31 +92,15 @@ export class PedidosComponent {
           void this.cargarPedidos();
         } else {
           this.pedidos.set([]);
+          this.envios.set({});
           this.selectedPedido.set(null);
         }
       });
     });
   }
 
-  async cargarPedidos(): Promise<void> {
-    if (this.loading()) {
-      return;
-    }
-
-    this.loading.set(true);
-    this.error.set('');
-
-    try {
-      const pedidos = this.isAdmin()
-        ? await firstValueFrom(this.bff.obtenerPedidos())
-        : await firstValueFrom(this.bff.obtenerMisPedidos());
-
-      this.pedidos.set(pedidos);
-    } catch {
-      this.error.set('No pudimos cargar tus pedidos. Intenta nuevamente.');
-    } finally {
-      this.loading.set(false);
-    }
+  estadoDe(pedido: PedidoResponseDto): string {
+    return estadoEfectivo(pedido, this.envios()[pedido.id]);
   }
 
   async crearPedido(): Promise<void> {
@@ -151,16 +157,95 @@ export class PedidosComponent {
   }
 
   async verDetalle(id: string): Promise<void> {
+    if (this.cargandoDetalle()) {
+      return;
+    }
+
+    this.cargandoDetalle.set(true);
     this.error.set('');
 
     try {
       this.selectedPedido.set(await firstValueFrom(this.bff.obtenerPedido(id)));
     } catch {
       this.error.set('No pudimos cargar el seguimiento de este pedido.');
+    } finally {
+      this.cargandoDetalle.set(false);
     }
   }
 
   cerrarDetalle(): void {
     this.selectedPedido.set(null);
+  }
+
+  private async cargarUnaVez(): Promise<void> {
+    if (this.destruido) {
+      return;
+    }
+
+    this.loading.set(true);
+
+    try {
+      const { pedidos, seguimiento } = await this.obtenerPedidosConEnvios();
+
+      if (this.destruido) {
+        return;
+      }
+
+      this.pedidos.set(pedidos);
+      this.envios.set(seguimiento.envios);
+      this.errorCarga.set(
+        seguimiento.sinVerificar.length
+          ? 'No pudimos verificar el envío de algunos pedidos; se muestra su estado registrado. Actualiza para volver a intentarlo.'
+          : '',
+      );
+      await this.refrescarDetalleAbierto();
+    } catch {
+      if (!this.destruido) {
+        this.errorCarga.set('No pudimos cargar tus pedidos. Intenta nuevamente.');
+      }
+    } finally {
+      if (!this.destruido) {
+        this.loading.set(false);
+      }
+    }
+  }
+
+  private async obtenerPedidosConEnvios(): Promise<{ pedidos: PedidoResponseDto[]; seguimiento: EnviosCargados }> {
+    if (this.isAdmin()) {
+      const [pedidos, envios] = await Promise.all([
+        firstValueFrom(this.bff.obtenerPedidos()),
+        firstValueFrom(this.bff.obtenerEnvios()),
+      ]);
+
+      return { pedidos, seguimiento: { envios: enviosDesdeListado(pedidos, envios), sinVerificar: [] } };
+    }
+
+    const pedidos = await firstValueFrom(this.bff.obtenerMisPedidos());
+
+    return { pedidos, seguimiento: await cargarEnviosPorPedido(this.bff, pedidos, () => this.destruido) };
+  }
+
+  private contar(estado: string): number {
+    return this.pedidos().filter((pedido) => this.estadoDe(pedido) === estado).length;
+  }
+
+  private async refrescarDetalleAbierto(): Promise<void> {
+    const abierto = this.selectedPedido();
+
+    if (!abierto) {
+      return;
+    }
+
+    try {
+      const actualizado = await firstValueFrom(this.bff.obtenerPedido(abierto.pedido.id));
+
+      if (!this.destruido) {
+        this.selectedPedido.set(actualizado);
+      }
+    } catch {
+      if (!this.destruido) {
+        this.selectedPedido.set(null);
+      }
+    }
   }
 }

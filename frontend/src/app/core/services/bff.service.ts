@@ -120,6 +120,10 @@ export class BffService {
     return this.http.post<EnvioResponseDto>(`${this.baseUrl}/envios`, request);
   }
 
+  obtenerEnvios(): Observable<EnvioResponseDto[]> {
+    return this.http.get<EnvioResponseDto[]>(`${this.baseUrl}/envios`);
+  }
+
   obtenerMisEnvios(): Observable<EnvioResponseDto[]> {
     return this.http.get<EnvioResponseDto[]>(`${this.baseUrl}/envios/mios`);
   }

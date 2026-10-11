@@ -28,6 +28,7 @@ export function fechaLegible(valor: string | null | undefined, vacio = 'Sin defi
 export function etiquetaEstado(estado: string): string {
   const etiquetas: Record<string, string> = {
     CREADO: 'Creado',
+    ASIGNADO: 'Asignado',
     DESPACHADO: 'Despachado',
     ENTREGADO: 'Entregado',
     CANCELADO: 'Cancelado',

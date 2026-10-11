@@ -1,19 +1,19 @@
 @if (!autenticado()) {
   <section class="login-panel">
-    <p class="eyebrow">Centro de envios y trazabilidad</p>
-    <h1 class="login-title">Inicia sesion para operar</h1>
+    <p class="eyebrow">Centro de envíos y trazabilidad</p>
+    <h1 class="login-title">Inicia sesión para operar</h1>
     <p class="login-copy">
-      Entra con tu cuenta corporativa. Segun el rol que tengas asignado veras un modulo distinto.
+      Entra con tu cuenta corporativa. Según el rol que tengas asignado verás un módulo distinto.
     </p>
 
     <button type="button" class="primary-button login-cta" (click)="login()">
-      Iniciar sesion con Azure AD
+      Iniciar sesión con Azure AD
     </button>
 
     <ul class="login-roles">
-      <li><strong>Cliente</strong> crea pedidos y sigue sus envios</li>
+      <li><strong>Cliente</strong> crea pedidos y sigue sus envíos</li>
       <li><strong>Repartidor</strong> actualiza el estado de las entregas en ruta</li>
-      <li><strong>Administrador</strong> asigna repartidores y supervisa la operacion</li>
+      <li><strong>Administrador</strong> asigna repartidores y supervisa la operación</li>
     </ul>
   </section>
 } @else {
@@ -22,7 +22,7 @@
       <div class="stack">
         <p class="eyebrow">Tu cuenta</p>
         <h2 class="page-title">Hola, {{ profile()?.nombre ?? 'bienvenido' }}</h2>
-        <p class="page-copy">Estos son los modulos disponibles para tu rol.</p>
+        <p class="page-copy">Estos son los módulos disponibles para tu rol.</p>
       </div>
 
       <div class="toolbar">
@@ -42,10 +42,10 @@
         <article class="metric highlight">
           <span class="metric-label">Rol</span>
           <strong>{{ roles().join(', ') || 'Sin asignar' }}</strong>
-          <small>segun tu cuenta corporativa</small>
+          <small>según tu cuenta corporativa</small>
         </article>
         <article class="metric">
-          <span class="metric-label">Modulos</span>
+          <span class="metric-label">Módulos</span>
           <strong>{{ accesosVisibles().length }}</strong>
           <small>disponibles para ti</small>
         </article>
@@ -66,7 +66,7 @@
       </article>
     } @empty {
       <div class="empty-state">
-        <strong>Tu cuenta todavia no tiene un rol asignado.</strong>
+        <strong>Tu cuenta todavía no tiene un rol asignado.</strong>
         <p>Pide a un administrador que te asigne el rol de cliente, repartidor o administrador.</p>
       </div>
     }

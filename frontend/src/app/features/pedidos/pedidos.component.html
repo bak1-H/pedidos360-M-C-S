@@ -5,8 +5,8 @@
       <h2 class="page-title">{{ isAdmin() ? 'Todos los pedidos' : 'Mis pedidos' }}</h2>
       <p class="page-copy">
         {{ isAdmin()
-          ? 'Revisa los pedidos de toda la operacion y abre el seguimiento de cada uno.'
-          : 'Crea un pedido nuevo y sigue el estado de tus envios en curso.' }}
+          ? 'Revisa los pedidos de toda la operación y abre el seguimiento de cada uno.'
+          : 'Crea un pedido nuevo y sigue el estado de tus envíos en curso.' }}
       </p>
     </div>
 
@@ -26,12 +26,22 @@
     <article class="metric highlight">
       <span class="metric-label">En camino</span>
       <strong>{{ enCamino() }}</strong>
-      <small>despachados</small>
+      <small>en tránsito</small>
     </article>
     <article class="metric">
       <span class="metric-label">Entregados</span>
       <strong>{{ entregados() }}</strong>
       <small>completados</small>
+    </article>
+    <article class="metric">
+      <span class="metric-label">Fallidos</span>
+      <strong>{{ fallidos() }}</strong>
+      <small>entrega fallida</small>
+    </article>
+    <article class="metric">
+      <span class="metric-label">Otros</span>
+      <strong>{{ otros() }}</strong>
+      <small>creados, asignados o cancelados</small>
     </article>
   </div>
 </section>
@@ -42,19 +52,19 @@
       <div class="section-head compact">
         <div class="stack">
           <p class="eyebrow">Nuevo pedido</p>
-          <h3>Que quieres enviar</h3>
+          <h3>¿Qué quieres enviar?</h3>
         </div>
       </div>
 
       <form class="form-grid" [formGroup]="pedidoForm" (ngSubmit)="crearPedido()">
         <label class="form-field">
           <span class="field-label">Retiro en</span>
-          <input class="input" formControlName="direccionOrigen" placeholder="Calle, numero y comuna" />
+          <input class="input" formControlName="direccionOrigen" placeholder="Calle, número y comuna" />
         </label>
 
         <label class="form-field">
           <span class="field-label">Entrega en</span>
-          <input class="input" formControlName="direccionDestino" placeholder="Calle, numero y comuna" />
+          <input class="input" formControlName="direccionDestino" placeholder="Calle, número y comuna" />
         </label>
 
         <label class="form-field form-span-2">
@@ -127,7 +137,11 @@
       <p class="panel-note error">{{ error() }}</p>
     }
 
-    @if (loading()) {
+    @if (errorCarga()) {
+      <p class="panel-note error">{{ errorCarga() }}</p>
+    }
+
+    @if (loading() && !pedidos().length) {
       <div class="empty-state">Cargando pedidos...</div>
     } @else if (pedidos().length) {
       <div class="table-wrap">
@@ -144,10 +158,10 @@
             @for (pedido of pedidos(); track pedido.id) {
               <tr>
                 <td>{{ referencia(pedido.id) }}</td>
-                <td><span class="badge badge-success">{{ estadoLegible(pedido.estado) }}</span></td>
+                <td><span [class]="'badge ' + claseBadge(estadoDe(pedido))">{{ estadoLegible(estadoDe(pedido)) }}</span></td>
                 <td>{{ pedido.direccionOrigen }} → {{ pedido.direccionDestino }}</td>
                 <td>
-                  <button type="button" class="inline-button" (click)="verDetalle(pedido.id)">
+                  <button type="button" class="inline-button" (click)="verDetalle(pedido.id)" [disabled]="cargandoDetalle()">
                     Ver seguimiento
                   </button>
                 </td>
@@ -158,8 +172,13 @@
       </div>
     } @else {
       <div class="empty-state">
-        <strong>Todavia no tienes pedidos.</strong>
-        <p>Crea el primero con el formulario y aparecera aqui con su estado.</p>
+        @if (isAdmin()) {
+          <strong>No hay pedidos registrados.</strong>
+          <p>Cuando un cliente cree un pedido, aparecerá aquí con su estado.</p>
+        } @else {
+          <strong>Todavía no tienes pedidos.</strong>
+          <p>Crea el primero con el formulario y aparecerá aquí con su estado.</p>
+        }
       </div>
     }
   </article>
@@ -178,7 +197,7 @@
     <div class="page-grid details-grid">
       <article class="page-card-soft">
         <p class="field-label">Pedido</p>
-        <p>Estado: <span class="badge badge-success">{{ estadoLegible(detalle.pedido.estado) }}</span></p>
+        <p>Estado: <span [class]="'badge ' + claseBadge(estadoEfectivo(detalle.pedido, detalle.envio))">{{ estadoLegible(estadoEfectivo(detalle.pedido, detalle.envio)) }}</span></p>
         <p>Creado: {{ fecha(detalle.pedido.fechaCreacion) }}</p>
         <p>Contenido: {{ detalle.pedido.detalles[0].descripcion }} (x{{ detalle.pedido.detalles[0].cantidad }})</p>
         <p>
@@ -190,11 +209,11 @@
       <article class="page-card-soft">
         <p class="field-label">Entrega</p>
         @if (detalle.envio; as envio) {
-          <p>Estado: <span class="badge badge-warning">{{ estadoLegible(envio.estadoEnvio) }}</span></p>
+          <p>Estado: <span [class]="'badge ' + claseBadge(envio.estadoEnvio)">{{ estadoLegible(envio.estadoEnvio) }}</span></p>
           <p>Asignado: {{ fecha(envio.fechaAsignacion, 'Pendiente') }}</p>
           <p>Entrega estimada: {{ fecha(envio.fechaEntregaEstimada, 'Sin estimar') }}</p>
         } @else {
-          <p>Este pedido todavia no tiene un repartidor asignado.</p>
+          <p>Este pedido todavía no tiene un repartidor asignado.</p>
         }
       </article>
     </div>

@@ -1,0 +1,229 @@
+<section class="section-frame" aria-labelledby="notificaciones-titulo">
+  <div class="section-head">
+    <div class="stack">
+      <p class="eyebrow">Administración</p>
+      <h2 class="page-title" id="notificaciones-titulo">Notificaciones</h2>
+      <p class="page-copy">
+        Observa qué eventos consumió el sistema como notificaciones, cuáles terminaron en colas de mensajes muertos y el estado en vivo de cada cola.
+      </p>
+    </div>
+
+    <div class="toolbar">
+      <span class="actualizado" role="status" aria-live="off">
+        @if (segundosDesdeActualizacion() !== null) {
+          Actualizado hace {{ segundosDesdeActualizacion() }} s
+        } @else {
+          Sin datos todavía
+        }
+      </span>
+
+      <label class="auto-toggle">
+        <input type="checkbox" [checked]="autoActualizar()" (change)="alternarAutoActualizar()" />
+        <span>Actualizar cada 5 s</span>
+      </label>
+
+      <button type="button" class="secondary-button" (click)="actualizar()" [disabled]="cargando()">
+        {{ cargando() ? 'Actualizando...' : 'Actualizar' }}
+      </button>
+    </div>
+  </div>
+
+  @if (error(); as tipoError) {
+    <div class="aviso-error" role="alert">
+      <p>
+        @if (tipoError === 'sin-permiso') {
+          No tienes permiso para ver las notificaciones. Se requiere el rol ADMIN.
+        } @else {
+          No pudimos cargar las notificaciones. Revisa tu conexión e intenta nuevamente.
+        }
+      </p>
+      <button type="button" class="secondary-button" (click)="actualizar()" [disabled]="cargando()">Reintentar</button>
+    </div>
+  }
+</section>
+
+<section class="section-frame" aria-labelledby="resumen-titulo">
+  <div class="section-head compact">
+    <div class="stack">
+      <p class="eyebrow">Resumen</p>
+      <h3 id="resumen-titulo">Eventos recibidos</h3>
+    </div>
+  </div>
+
+  @if (resumen(); as datos) {
+    <div class="resumen">
+      <div class="resumen-total">
+        <span class="metric-label">Total</span>
+        <strong>{{ datos.total }}</strong>
+      </div>
+
+      <ul class="chips" aria-label="Notificaciones por tipo">
+        @for (chip of chipsTipo(); track chip.clave) {
+          <li [class]="'chip ' + claseTipo(chip.clave)">
+            <span class="chip-punto" aria-hidden="true"></span>
+            <span>{{ etiquetaTipo(chip.clave) }}</span>
+            <strong>{{ chip.cantidad }}</strong>
+          </li>
+        }
+      </ul>
+
+      <ul class="estados" aria-label="Notificaciones por estado">
+        <li class="estado estado-procesada">
+          <span aria-hidden="true">✓</span>
+          <span>Procesadas</span>
+          <strong>{{ datos.porEstado.PROCESADA }}</strong>
+        </li>
+        <li class="estado estado-muerta">
+          <span aria-hidden="true">✕</span>
+          <span>Muertas</span>
+          <strong>{{ datos.porEstado.MUERTA }}</strong>
+        </li>
+      </ul>
+    </div>
+  } @else if (cargando()) {
+    <div class="skeleton skeleton-resumen" aria-busy="true">
+      <span class="visually-hidden">Cargando resumen...</span>
+    </div>
+  } @else {
+    <div class="empty-state">No hay resumen disponible todavía.</div>
+  }
+</section>
+
+<section class="section-frame" aria-labelledby="colas-titulo">
+  <div class="section-head compact">
+    <div class="stack">
+      <p class="eyebrow">RabbitMQ</p>
+      <h3 id="colas-titulo">Estado de las colas</h3>
+      <p class="page-copy">Cada fila es un flujo de eventos: cola de negocio, cola de mensajes muertos y cola de estacionados.</p>
+    </div>
+  </div>
+
+  @if (flujos().length) {
+    <ul class="flujos">
+      @for (flujo of flujos(); track flujo.base) {
+        <li class="flujo" [attr.aria-label]="'Flujo ' + flujo.base">
+          <p class="flujo-nombre mono">{{ flujo.base }}</p>
+
+          <div class="flujo-nodos">
+            @for (nodo of nodos(flujo); track nodo.categoria; let primero = $first) {
+              @if (!primero) {
+                <span class="conector" aria-hidden="true"></span>
+              }
+
+              <div [class]="claseNodo(nodo.categoria, nodo.cola)">
+                <span class="nodo-categoria">{{ etiquetaCategoria(nodo.categoria) }}</span>
+                @if (nodo.cola; as cola) {
+                  <span class="nodo-nombre mono">{{ cola.nombre }}</span>
+                  <strong class="nodo-cantidad">{{ textoMensajes(cola) }}</strong>
+                  <span class="nodo-estado">{{ estadoNodo(nodo.categoria, cola) }}</span>
+                  <span class="badge">{{ textoConsumidores(cola) }}</span>
+                } @else {
+                  <span class="nodo-estado">No disponible</span>
+                }
+              </div>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  } @else if (cargando()) {
+    <ul class="flujos" aria-busy="true">
+      @for (marcador of [1, 2, 3, 4, 5]; track marcador) {
+        <li class="skeleton skeleton-flujo"></li>
+      }
+    </ul>
+    <span class="visually-hidden">Cargando colas...</span>
+  } @else {
+    <div class="empty-state">
+      <strong>No hay colas para mostrar.</strong>
+      <p>Cuando el broker reporte sus colas, aparecerán aquí.</p>
+    </div>
+  }
+</section>
+
+<section class="section-frame" aria-labelledby="tabla-titulo">
+  <div class="section-head compact">
+    <div class="stack">
+      <p class="eyebrow">Historial</p>
+      <h3 id="tabla-titulo">Notificaciones recibidas</h3>
+    </div>
+
+    <div class="toolbar">
+      <label class="form-field">
+        <span class="field-label">Tipo</span>
+        <select class="select" (change)="cambiarTipo($any($event.target).value)">
+          <option value="">Todos</option>
+          @for (tipo of tipos; track tipo) {
+            <option [value]="tipo" [selected]="filtroTipo() === tipo">{{ etiquetaTipo(tipo) }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="form-field">
+        <span class="field-label">Estado</span>
+        <select class="select" (change)="cambiarEstado($any($event.target).value)">
+          <option value="">Todos</option>
+          @for (estado of estados; track estado) {
+            <option [value]="estado" [selected]="filtroEstado() === estado">{{ etiquetaEstado(estado) }}</option>
+          }
+        </select>
+      </label>
+    </div>
+  </div>
+
+  @if (filas().length) {
+    <div class="table-wrap">
+      <table class="data-table">
+        <caption class="visually-hidden">Notificaciones recibidas, de la más reciente a la más antigua</caption>
+        <thead>
+          <tr>
+            <th scope="col">Fecha</th>
+            <th scope="col">Tipo</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Destinatario</th>
+            <th scope="col">Mensaje</th>
+            <th scope="col">Cola</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (fila of filas(); track fila.id) {
+            <tr [class.fila-muerta]="fila.estado === 'MUERTA'">
+              <td class="celda-fecha">{{ fecha(fila.fechaRecepcion) }}</td>
+              <td><span [class]="'chip ' + claseTipo(fila.tipo)"><span class="chip-punto" aria-hidden="true"></span>{{ etiquetaTipo(fila.tipo) }}</span></td>
+              <td>
+                <span [class]="'estado-etiqueta ' + (fila.estado === 'MUERTA' ? 'estado-muerta' : 'estado-procesada')">
+                  <span aria-hidden="true">{{ fila.estado === 'MUERTA' ? '✕' : '✓' }}</span>
+                  {{ etiquetaEstado(fila.estado) }}
+                </span>
+              </td>
+              <td>{{ fila.destinatario }}</td>
+              <td class="celda-mensaje">{{ fila.mensaje }}</td>
+              <td class="mono">{{ fila.cola }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (cargando() && !pagina()) {
+    <div class="skeleton skeleton-tabla" aria-busy="true">
+      <span class="visually-hidden">Cargando notificaciones...</span>
+    </div>
+  } @else if (!error()) {
+    <div class="empty-state">
+      <strong>No hay notificaciones para mostrar.</strong>
+      <p>Cuando el sistema consuma eventos, o si cambias los filtros, los resultados aparecerán aquí.</p>
+    </div>
+  }
+
+  <nav class="paginacion" aria-label="Paginación de notificaciones">
+    <button type="button" class="secondary-button" (click)="irAPagina(numeroPagina() - 1)" [disabled]="cargando() || numeroPagina() === 0">
+      Anterior
+    </button>
+    <span class="paginacion-info" aria-live="polite">
+      Página {{ numeroPagina() + 1 }} de {{ totalPaginas() }} · {{ pagina()?.totalElementos ?? 0 }} notificaciones
+    </span>
+    <button type="button" class="secondary-button" (click)="irAPagina(numeroPagina() + 1)" [disabled]="cargando() || numeroPagina() + 1 >= totalPaginas()">
+      Siguiente
+    </button>
+  </nav>
+</section>

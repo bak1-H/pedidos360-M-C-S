@@ -5,7 +5,7 @@ import { AuthService } from './core/auth/auth.service';
 
 const authServiceMock = {
   isAuthenticated: () => false,
-  displayName: () => 'Sesion no iniciada',
+  displayName: () => 'Sesión no iniciada',
   email: () => 'Conecta tu cuenta',
   roles: () => [] as string[],
   lastMessage: () => 'Ready to authenticate with Azure AD.',
@@ -36,6 +36,6 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Pedidos360');
+    expect(compiled.querySelector('.brand-name')?.textContent).toContain('Pedidos360');
   });
 });

@@ -28,8 +28,9 @@ export class App {
   private readonly navigationItems: NavigationItem[] = [
     { label: 'Inicio', path: '/', roles: [], exact: true },
     { label: 'Pedidos', path: '/pedidos', roles: ['CLIENTE', 'ADMIN'] },
-    { label: 'Envios', path: '/envios', roles: ['REPARTIDOR'] },
-    { label: 'Administracion', path: '/admin', roles: ['ADMIN'] },
+    { label: 'Envíos', path: '/envios', roles: ['REPARTIDOR'] },
+    { label: 'Administración', path: '/admin', roles: ['ADMIN'] },
+    { label: 'Notificaciones', path: '/notificaciones', roles: ['ADMIN'] },
   ];
 
   protected readonly visibleNavigation = computed(() =>

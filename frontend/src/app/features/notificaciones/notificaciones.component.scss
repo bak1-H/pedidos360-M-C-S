@@ -1,0 +1,361 @@
+:host {
+  display: grid;
+  gap: 32px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.actualizado {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.auto-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  font-size: 0.86rem;
+  color: var(--text);
+  cursor: pointer;
+
+  input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+}
+
+.aviso-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--destructive-soft);
+  border: 1px solid rgba(248, 81, 73, 0.32);
+
+  p {
+    color: var(--destructive);
+  }
+}
+
+.resumen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 24px;
+}
+
+.resumen-total {
+  display: grid;
+  gap: 6px;
+  padding: 14px 18px;
+  min-width: 120px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(180deg, var(--primary-soft), var(--bg-raised) 70%);
+  border: 1px solid var(--neon-edge);
+  box-shadow: var(--neon-halo);
+
+  strong {
+    font-size: 1.9rem;
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: #c7ceff;
+    text-shadow: 0 0 18px rgba(94, 106, 210, 0.55);
+  }
+}
+
+.chips,
+.estados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chips {
+  flex: 1;
+  min-width: 260px;
+}
+
+.chip {
+  --chip-color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--chip-color);
+  background: color-mix(in srgb, var(--chip-color) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--chip-color) 38%, transparent);
+
+  strong {
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+}
+
+.chip-punto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.tipo-pedido-creado {
+  --chip-color: #8b95e8;
+}
+
+.estado,
+.estado-etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  white-space: nowrap;
+
+  strong {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.estado-procesada {
+  color: var(--success);
+  background: var(--success-soft);
+  border: 1px solid rgba(63, 185, 80, 0.28);
+}
+
+.estado-muerta {
+  color: var(--destructive);
+  background: var(--destructive-soft);
+  border: 1px solid rgba(248, 81, 73, 0.32);
+}
+
+.flujos {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.flujo {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+}
+
+.flujo-nombre {
+  color: var(--text);
+  font-size: 0.82rem;
+}
+
+.flujo-nodos {
+  display: grid;
+  grid-template-columns: 1fr 36px 1fr;
+  align-items: stretch;
+}
+
+.conector {
+  position: relative;
+  align-self: center;
+  height: 2px;
+  background: var(--border-strong);
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: -4px;
+    border-left: 8px solid var(--border-strong);
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+  }
+}
+
+.nodo {
+  --nodo-color: var(--muted);
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.nodo-categoria {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.nodo-nombre {
+  overflow-wrap: anywhere;
+}
+
+.nodo-cantidad {
+  font-size: 1.15rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.nodo-estado {
+  font-size: 0.8rem;
+  color: var(--nodo-color);
+}
+
+.nodo .badge {
+  justify-self: start;
+}
+
+.nodo-negocio.con-mensajes {
+  --nodo-color: var(--primary-text);
+  border-color: var(--neon-edge);
+  animation: pulso 1.6s ease-in-out infinite;
+}
+
+.nodo-dlq.con-mensajes {
+  --nodo-color: var(--destructive);
+  background: var(--destructive-soft);
+  border-color: rgba(248, 81, 73, 0.5);
+}
+
+@keyframes pulso {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(94, 106, 210, 0.45);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgba(94, 106, 210, 0);
+  }
+}
+
+.skeleton {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--surface) 0%, var(--surface-hover) 50%, var(--surface) 100%);
+  background-size: 200% 100%;
+  animation: brillo 1.4s linear infinite;
+}
+
+.skeleton-resumen {
+  height: 72px;
+}
+
+.skeleton-flujo {
+  height: 96px;
+  list-style: none;
+}
+
+.skeleton-tabla {
+  height: 220px;
+}
+
+@keyframes brillo {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.data-table caption {
+  text-align: left;
+}
+
+.celda-fecha {
+  white-space: nowrap;
+}
+
+.celda-mensaje {
+  min-width: 240px;
+  max-width: 420px;
+  overflow-wrap: anywhere;
+}
+
+.fila-muerta {
+  background: rgba(248, 81, 73, 0.05);
+}
+
+.paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.paginacion-info {
+  font-size: 0.86rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 760px) {
+  .flujo-nodos {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .conector {
+    justify-self: center;
+    width: 2px;
+    height: 24px;
+
+    &::after {
+      right: auto;
+      left: -4px;
+      top: auto;
+      bottom: -1px;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 8px solid var(--border-strong);
+      border-bottom: 0;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nodo-negocio.con-mensajes,
+  .skeleton {
+    animation: none;
+  }
+}

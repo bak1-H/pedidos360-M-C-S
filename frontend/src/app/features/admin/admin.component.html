@@ -1,8 +1,8 @@
 <section class="section-frame">
   <div class="section-head">
     <div class="stack">
-      <p class="eyebrow">Administracion</p>
-      <h2 class="page-title">Gestion de la operacion</h2>
+      <p class="eyebrow">Administración</p>
+      <h2 class="page-title">Gestión de la operación</h2>
       <p class="page-copy">Asigna repartidores a los pedidos y revisa el estado general del despacho.</p>
     </div>
 
@@ -21,8 +21,13 @@
     </article>
     <article class="metric highlight">
       <span class="metric-label">Por despachar</span>
-      <strong>{{ pedidosSinDespachar().length }}</strong>
+      <strong>{{ pedidosAsignables().length }}</strong>
       <small>esperan repartidor</small>
+    </article>
+    <article class="metric">
+      <span class="metric-label">Fallidos</span>
+      <strong>{{ fallidos() }}</strong>
+      <small>entrega fallida</small>
     </article>
     <article class="metric">
       <span class="metric-label">Repartidores</span>
@@ -36,7 +41,7 @@
   <article class="page-card">
     <div class="section-head compact">
       <div class="stack">
-        <p class="eyebrow">Asignar envio</p>
+        <p class="eyebrow">Asignar envío</p>
         <h3>Entrega un pedido a un repartidor</h3>
       </div>
     </div>
@@ -46,10 +51,13 @@
         <span class="field-label">Pedido</span>
         <select class="select" formControlName="pedidoId">
           <option value="">Selecciona un pedido</option>
-          @for (pedido of pedidos(); track pedido.id) {
+          @for (pedido of pedidosAsignables(); track pedido.id) {
             <option [value]="pedido.id">{{ etiquetaPedido(pedido) }}</option>
           }
         </select>
+        @if (!loading() && !pedidosAsignables().length) {
+          <small class="panel-note">No hay pedidos disponibles para asignar. Los que ya tienen un envío, incluso fallido, o están cancelados no se listan.</small>
+        }
       </label>
 
       <label class="form-field form-span-2">
@@ -61,7 +69,7 @@
           }
         </select>
         @if (!repartidores().length) {
-          <small class="panel-note">No hay usuarios con rol repartidor todavia.</small>
+          <small class="panel-note">Todavía no hay usuarios con rol repartidor.</small>
         }
       </label>
 
@@ -71,8 +79,12 @@
       </label>
 
       <div class="toolbar form-span-2">
-        <button type="submit" class="primary-button" [disabled]="saving()">
-          {{ saving() ? 'Asignando...' : 'Asignar envio' }}
+        <button
+          type="submit"
+          class="primary-button"
+          [disabled]="saving() || loading() || !pedidosAsignables().length || !repartidores().length"
+        >
+          {{ saving() ? 'Asignando...' : 'Asignar envío' }}
         </button>
       </div>
     </form>
@@ -83,6 +95,10 @@
 
     @if (error()) {
       <p class="panel-note error">{{ error() }}</p>
+    }
+
+    @if (errorCarga()) {
+      <p class="panel-note error">{{ errorCarga() }}</p>
     }
   </article>
 
@@ -118,8 +134,8 @@
       </div>
     } @else {
       <div class="empty-state compact">
-        <strong>Aun no hay usuarios registrados.</strong>
-        <p>Los perfiles se crean automaticamente la primera vez que cada persona inicia sesion.</p>
+        <strong>Aún no hay usuarios registrados.</strong>
+        <p>Los perfiles se crean automáticamente la primera vez que cada persona inicia sesión.</p>
       </div>
     }
   </article>
@@ -131,27 +147,37 @@
       <p class="eyebrow">Pedidos</p>
       <h3>Todos los pedidos</h3>
     </div>
+    <label class="form-field">
+      <span class="field-label">Mostrar</span>
+      <select class="select" (change)="seleccionarFiltro($any($event.target).value)">
+        @for (opcion of filtros; track opcion.valor) {
+          <option [value]="opcion.valor" [selected]="opcion.valor === filtro()">{{ opcion.etiqueta }}</option>
+        }
+      </select>
+    </label>
   </div>
 
-  @if (loading()) {
+  @if (loading() && !pedidos().length) {
     <div class="empty-state">Cargando pedidos...</div>
-  } @else if (pedidos().length) {
+  } @else if (pedidosFiltrados().length) {
     <div class="table-wrap">
       <table class="data-table">
         <thead>
           <tr>
             <th>Pedido</th>
             <th>Estado</th>
+            <th>Repartidor</th>
             <th>Origen</th>
             <th>Destino</th>
             <th>Creado</th>
           </tr>
         </thead>
         <tbody>
-          @for (pedido of pedidos(); track pedido.id) {
+          @for (pedido of pedidosFiltrados(); track pedido.id) {
             <tr>
               <td>{{ referencia(pedido.id) }}</td>
-              <td><span class="badge badge-success">{{ estadoLegible(pedido.estado) }}</span></td>
+              <td><span [class]="'badge ' + claseBadge(estadoDe(pedido))">{{ estadoLegible(estadoDe(pedido)) }}</span></td>
+              <td>{{ repartidorDe(pedido) }}</td>
               <td>{{ pedido.direccionOrigen }}</td>
               <td>{{ pedido.direccionDestino }}</td>
               <td>{{ fecha(pedido.fechaCreacion) }}</td>
@@ -160,10 +186,15 @@
         </tbody>
       </table>
     </div>
+  } @else if (pedidos().length) {
+    <div class="empty-state">
+      <strong>No hay pedidos en esta vista.</strong>
+      <p>Cambia el filtro para ver el resto de los pedidos.</p>
+    </div>
   } @else {
     <div class="empty-state">
       <strong>No hay pedidos registrados.</strong>
-      <p>Cuando un cliente cree su primer pedido, aparecera aqui listo para asignar.</p>
+      <p>Cuando un cliente cree su primer pedido, aparecerá aquí listo para asignar.</p>
     </div>
   }
 </section>

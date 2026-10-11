@@ -27,6 +27,12 @@ export const routes: Routes = [
 		loadComponent: () => import('./features/admin/admin.component').then((module) => module.AdminComponent),
 	},
 	{
+		path: 'notificaciones',
+		canActivate: [MsalGuard, roleGuard],
+		data: { roles: ['ADMIN'] },
+		loadComponent: () => import('./features/notificaciones/notificaciones.component').then((module) => module.NotificacionesComponent),
+	},
+	{
 		path: '**',
 		redirectTo: '',
 	},

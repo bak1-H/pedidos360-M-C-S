@@ -36,15 +36,15 @@ export class HomeComponent {
       roles: ['CLIENTE', 'ADMIN'],
     },
     {
-      label: 'Mis envios',
+      label: 'Mis envíos',
       path: '/envios',
       descripcion: 'Revisa las entregas asignadas y actualiza su estado en ruta.',
       roles: ['REPARTIDOR'],
     },
     {
-      label: 'Administracion',
+      label: 'Administración',
       path: '/admin',
-      descripcion: 'Asigna repartidores a los pedidos y supervisa la operacion.',
+      descripcion: 'Asigna repartidores a los pedidos y supervisa la operación.',
       roles: ['ADMIN'],
     },
   ];
