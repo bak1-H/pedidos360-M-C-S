@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
 @Component
 public class InternalTokenFilter implements Filter {
@@ -27,13 +29,13 @@ public class InternalTokenFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-        if (!httpRequest.getRequestURI().startsWith("/internal/")) {
+        if (isExempt(httpRequest)) {
             chain.doFilter(request, response);
             return;
         }
 
         String receivedToken = httpRequest.getHeader("X-Internal-Token");
-        if (expectedToken == null || !expectedToken.equals(receivedToken)) {
+        if (!isValid(receivedToken)) {
             httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             httpResponse.setContentType("application/json");
             httpResponse.getWriter().write("{\"error\":\"unauthorized\",\"message\":\"X-Internal-Token invalido o ausente\"}");
@@ -41,5 +43,21 @@ public class InternalTokenFilter implements Filter {
         }
 
         chain.doFilter(request, response);
+    }
+
+    private boolean isExempt(HttpServletRequest request) {
+        String servletPath = request.getServletPath() == null ? "" : request.getServletPath();
+        String pathInfo = request.getPathInfo() == null ? "" : request.getPathInfo();
+        String path = servletPath + pathInfo;
+        return path.equals("/actuator") || path.startsWith("/actuator/");
+    }
+
+    private boolean isValid(String receivedToken) {
+        if (expectedToken == null || receivedToken == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                expectedToken.getBytes(StandardCharsets.UTF_8),
+                receivedToken.getBytes(StandardCharsets.UTF_8));
     }
 }
