@@ -2,6 +2,7 @@ package com.pedidos360.usuarios.service;
 
 import com.pedidos360.usuarios.dto.CrearUsuarioRequest;
 import com.pedidos360.usuarios.dto.UsuarioResponse;
+import com.pedidos360.usuarios.event.UsuarioCreadoEvent;
 import com.pedidos360.usuarios.exception.RecursoNoEncontradoException;
 import com.pedidos360.usuarios.exception.UsuarioDuplicadoException;
 import com.pedidos360.usuarios.model.Rol;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -30,6 +32,9 @@ class UsuarioServiceTest {
     @Mock
     private UsuarioRepository usuarioRepository;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private UsuarioService usuarioService;
 
@@ -44,6 +49,7 @@ class UsuarioServiceTest {
 
         assertThat(creado.rol()).isEqualTo(Rol.CLIENTE);
         assertThat(creado.email()).isEqualTo("ana@pedidos360.cl");
+        verify(eventPublisher).publishEvent(any(UsuarioCreadoEvent.class));
     }
 
     @Test
@@ -67,6 +73,7 @@ class UsuarioServiceTest {
                 .hasMessageContaining("oid-3");
 
         verify(usuarioRepository, never()).save(any());
+        verify(eventPublisher, never()).publishEvent(any(UsuarioCreadoEvent.class));
     }
 
     @Test

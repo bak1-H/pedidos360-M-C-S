@@ -8,5 +8,10 @@ spring:
     hibernate:
       ddl-auto: create-drop
 
+rabbitmq:
+  exchange: pedidos360.eventos
+  routing-keys:
+    usuario-creado: usuario.creado
+
 internal:
   token: token-de-prueba

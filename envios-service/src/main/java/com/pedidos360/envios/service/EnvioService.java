@@ -3,10 +3,15 @@ package com.pedidos360.envios.service;
 import com.pedidos360.envios.dto.CambioEstadoEnvioDTO;
 import com.pedidos360.envios.dto.EnvioRequestDTO;
 import com.pedidos360.envios.dto.EnvioResponseDTO;
+import com.pedidos360.envios.event.EnvioAsignadoEvent;
+import com.pedidos360.envios.event.EnvioEntregadoEvent;
+import com.pedidos360.envios.event.EnvioEstadoCambiadoEvent;
 import com.pedidos360.envios.model.Envio;
+import com.pedidos360.envios.model.EstadoEnvio;
 import com.pedidos360.envios.model.EventoEnvio;
 import com.pedidos360.envios.repository.EnvioRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,8 +24,11 @@ public class EnvioService {
 
     private final EnvioRepository envioRepository;
 
-    public EnvioService(EnvioRepository envioRepository) {
+    private final ApplicationEventPublisher eventPublisher;
+
+    public EnvioService(EnvioRepository envioRepository, ApplicationEventPublisher eventPublisher) {
         this.envioRepository = envioRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -36,7 +44,10 @@ public class EnvioService {
         evento.setDescripcion("Envio creado y asignado al repartidor " + request.repartidorId());
         envio.registrarEvento(evento);
 
-        return EnvioResponseDTO.from(envioRepository.save(envio));
+        EnvioResponseDTO creado = EnvioResponseDTO.from(envioRepository.save(envio));
+        eventPublisher.publishEvent(new EnvioAsignadoEvent(
+                creado.id(), creado.pedidoId(), creado.repartidorId(), creado.fechaEntregaEstimada()));
+        return creado;
     }
 
     @Transactional(readOnly = true)
@@ -58,7 +69,19 @@ public class EnvioService {
         evento.setDescripcion(cambio.descripcionEvento());
         envio.registrarEvento(evento);
 
-        return EnvioResponseDTO.from(envioRepository.save(envio));
+        EnvioResponseDTO actualizado = EnvioResponseDTO.from(envioRepository.save(envio));
+        publicarCambioDeEstado(actualizado, cambio);
+        return actualizado;
+    }
+
+    private void publicarCambioDeEstado(EnvioResponseDTO envio, CambioEstadoEnvioDTO cambio) {
+        LocalDateTime ahora = LocalDateTime.now();
+        eventPublisher.publishEvent(new EnvioEstadoCambiadoEvent(
+                envio.id(), envio.pedidoId(), envio.estadoEnvio(), cambio.descripcionEvento(), ahora));
+        if (envio.estadoEnvio() == EstadoEnvio.ENTREGADO) {
+            eventPublisher.publishEvent(new EnvioEntregadoEvent(
+                    envio.id(), envio.pedidoId(), envio.repartidorId(), ahora));
+        }
     }
 
     @Transactional(readOnly = true)

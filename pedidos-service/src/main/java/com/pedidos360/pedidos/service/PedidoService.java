@@ -6,7 +6,9 @@ import com.pedidos360.pedidos.model.DetallePedido;
 import com.pedidos360.pedidos.model.Paquete;
 import com.pedidos360.pedidos.model.Pedido;
 import com.pedidos360.pedidos.repository.PedidoRepository;
+import com.pedidos360.pedidos.event.PedidoCreadoEvent;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,8 +20,11 @@ public class PedidoService {
 
     private final PedidoRepository pedidoRepository;
 
-    public PedidoService(PedidoRepository pedidoRepository) {
+    private final ApplicationEventPublisher eventPublisher;
+
+    public PedidoService(PedidoRepository pedidoRepository, ApplicationEventPublisher eventPublisher) {
         this.pedidoRepository = pedidoRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -45,7 +50,10 @@ public class PedidoService {
         paquete.setTipo(request.paquete().tipo());
         pedido.asignarPaquete(paquete);
 
-        return PedidoResponseDTO.from(pedidoRepository.save(pedido));
+        PedidoResponseDTO creado = PedidoResponseDTO.from(pedidoRepository.save(pedido));
+        eventPublisher.publishEvent(new PedidoCreadoEvent(
+                creado.id(), creado.clienteId(), creado.direccionDestino(), creado.fechaCreacion()));
+        return creado;
     }
 
     @Transactional(readOnly = true)

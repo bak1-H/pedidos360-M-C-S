@@ -4,6 +4,7 @@ import com.pedidos360.pedidos.dto.DetallePedidoDTO;
 import com.pedidos360.pedidos.dto.PaqueteDTO;
 import com.pedidos360.pedidos.dto.PedidoRequestDTO;
 import com.pedidos360.pedidos.dto.PedidoResponseDTO;
+import com.pedidos360.pedidos.event.PedidoCreadoEvent;
 import com.pedidos360.pedidos.model.Pedido;
 import com.pedidos360.pedidos.model.TipoPaquete;
 import com.pedidos360.pedidos.repository.PedidoRepository;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -22,6 +24,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,9 +33,12 @@ class PedidoServiceTest {
     @Mock
     private PedidoRepository pedidoRepository;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     @Test
     void creaPedidoConDetalleYPaquete() {
-        PedidoService service = new PedidoService(pedidoRepository);
+        PedidoService service = new PedidoService(pedidoRepository, eventPublisher);
         PedidoRequestDTO request = new PedidoRequestDTO(
                 UUID.randomUUID(),
                 "Av. Siempre Viva 123",
@@ -51,11 +57,12 @@ class PedidoServiceTest {
         assertThat(guardado.getPaquete()).isNotNull();
         assertThat(guardado.getPaquete().getPedido()).isSameAs(guardado);
         assertThat(response.direccionOrigen()).isEqualTo("Av. Siempre Viva 123");
+        verify(eventPublisher).publishEvent(any(PedidoCreadoEvent.class));
     }
 
     @Test
     void lanzaExcepcionSiPedidoNoExiste() {
-        PedidoService service = new PedidoService(pedidoRepository);
+        PedidoService service = new PedidoService(pedidoRepository, eventPublisher);
         UUID id = UUID.randomUUID();
         when(pedidoRepository.findById(id)).thenReturn(Optional.empty());
 

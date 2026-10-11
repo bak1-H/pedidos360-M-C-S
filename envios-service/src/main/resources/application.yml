@@ -8,6 +8,19 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:azure}
   jpa:
     open-in-view: false
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
+    connection-timeout: 3s
+
+rabbitmq:
+  exchange: pedidos360.eventos
+  routing-keys:
+    envio-asignado: envio.asignado
+    envio-estado-cambiado: envio.estado_cambiado
+    envio-entregado: envio.entregado
 
 internal:
   token: ${INTERNAL_TOKEN}
@@ -17,3 +30,6 @@ management:
     web:
       exposure:
         include: health,info
+  health:
+    rabbit:
+      enabled: false
