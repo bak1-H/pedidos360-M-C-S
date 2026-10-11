@@ -2,14 +2,12 @@ package com.pedidos360.usuarios.service;
 
 import com.pedidos360.usuarios.dto.CrearUsuarioRequest;
 import com.pedidos360.usuarios.dto.UsuarioResponse;
-import com.pedidos360.usuarios.event.UsuarioCreadoEvent;
 import com.pedidos360.usuarios.exception.RecursoNoEncontradoException;
 import com.pedidos360.usuarios.exception.UsuarioDuplicadoException;
 import com.pedidos360.usuarios.model.Rol;
 import com.pedidos360.usuarios.model.Usuario;
 import com.pedidos360.usuarios.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +20,6 @@ import java.util.UUID;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
-    private final ApplicationEventPublisher eventPublisher;
 
     public UsuarioResponse buscarPorAzureAdObjectId(String azureAdObjectId) {
         return usuarioRepository.findByAzureAdObjectId(azureAdObjectId)
@@ -51,10 +48,7 @@ public class UsuarioService {
                 .rol(request.rol() != null ? request.rol() : Rol.CLIENTE)
                 .build();
 
-        UsuarioResponse creado = UsuarioResponse.desde(usuarioRepository.save(usuario));
-        eventPublisher.publishEvent(new UsuarioCreadoEvent(
-                creado.id(), creado.nombre(), creado.email(), creado.rol(), creado.fechaCreacion()));
-        return creado;
+        return UsuarioResponse.desde(usuarioRepository.save(usuario));
     }
 
     @Transactional

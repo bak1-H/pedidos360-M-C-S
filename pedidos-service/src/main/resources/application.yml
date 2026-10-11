@@ -14,11 +14,31 @@ spring:
     username: ${SPRING_RABBITMQ_USERNAME:guest}
     password: ${SPRING_RABBITMQ_PASSWORD:guest}
     connection-timeout: 3s
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        acknowledge-mode: manual
+        default-requeue-rejected: false
+        prefetch: 10
 
 rabbitmq:
   exchange: pedidos360.eventos
+  dead-letter-exchange: pedidos360.eventos.dlx
   routing-keys:
     pedido-creado: pedido.creado
+  envio-asignado:
+    queue: pedidos.envio.asignado
+    routing-key: envio.asignado
+    dead-letter-queue: pedidos.envio.asignado.dlq
+    dead-letter-routing-key: pedidos.envio.asignado.dlq
+  envio-estado-cambiado:
+    queue: pedidos.envio.estado_cambiado
+    routing-key: envio.estado_cambiado
+    dead-letter-queue: pedidos.envio.estado_cambiado.dlq
+    dead-letter-routing-key: pedidos.envio.estado_cambiado.dlq
 
 internal:
   token: ${INTERNAL_TOKEN}

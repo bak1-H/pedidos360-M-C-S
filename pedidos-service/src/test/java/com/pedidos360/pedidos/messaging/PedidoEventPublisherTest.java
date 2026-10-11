@@ -23,7 +23,8 @@ class PedidoEventPublisherTest {
     private RabbitTemplate rabbitTemplate;
 
     private final RabbitTopologyProperties topology = new RabbitTopologyProperties(
-            "pedidos360.eventos", new RabbitTopologyProperties.RoutingKeys("pedido.creado"));
+            "pedidos360.eventos", "pedidos360.eventos.dlx", new RabbitTopologyProperties.RoutingKeys("pedido.creado"),
+            null, null);
 
     private final PedidoCreadoEvent event = new PedidoCreadoEvent(
             UUID.randomUUID(), UUID.randomUUID(), "Calle Falsa 456", LocalDateTime.now());

@@ -3,20 +3,26 @@ package com.pedidos360.pedidos.service;
 import com.pedidos360.pedidos.dto.PedidoRequestDTO;
 import com.pedidos360.pedidos.dto.PedidoResponseDTO;
 import com.pedidos360.pedidos.model.DetallePedido;
+import com.pedidos360.pedidos.model.EstadoPedido;
 import com.pedidos360.pedidos.model.Paquete;
 import com.pedidos360.pedidos.model.Pedido;
 import com.pedidos360.pedidos.repository.PedidoRepository;
 import com.pedidos360.pedidos.event.PedidoCreadoEvent;
 import jakarta.persistence.EntityNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
 public class PedidoService {
+
+    private static final Logger log = LoggerFactory.getLogger(PedidoService.class);
 
     private final PedidoRepository pedidoRepository;
 
@@ -54,6 +60,37 @@ public class PedidoService {
         eventPublisher.publishEvent(new PedidoCreadoEvent(
                 creado.id(), creado.clienteId(), creado.direccionDestino(), creado.fechaCreacion()));
         return creado;
+    }
+
+    @Transactional
+    public void sincronizarConEnvioAsignado(UUID pedidoId) {
+        avanzar(pedidoId, EstadoPedido.DESPACHADO);
+    }
+
+    @Transactional
+    public void sincronizarConEstadoDeEnvio(UUID pedidoId, String estadoEnvio) {
+        estadoPedidoPara(estadoEnvio).ifPresent(destino -> avanzar(pedidoId, destino));
+    }
+
+    public static Optional<EstadoPedido> estadoPedidoPara(String estadoEnvio) {
+        return switch (estadoEnvio) {
+            case "EN_TRANSITO" -> Optional.of(EstadoPedido.DESPACHADO);
+            case "ENTREGADO" -> Optional.of(EstadoPedido.ENTREGADO);
+            default -> Optional.empty();
+        };
+    }
+
+    private void avanzar(UUID pedidoId, EstadoPedido destino) {
+        Optional<Pedido> encontrado = pedidoRepository.findByIdForUpdate(pedidoId);
+        if (encontrado.isEmpty()) {
+            log.warn("Se ignora el evento de envio: no existe el pedido {}", pedidoId);
+            return;
+        }
+        Pedido pedido = encontrado.get();
+        if (pedido.getEstado().puedeAvanzarA(destino)) {
+            pedido.setEstado(destino);
+            pedidoRepository.save(pedido);
+        }
     }
 
     @Transactional(readOnly = true)
