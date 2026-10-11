@@ -49,14 +49,14 @@ public class MensajeProcesador {
         try {
             payload = objectMapper.readValue(message.getBody(), tipo);
         } catch (IOException ex) {
-            throw new PayloadInvalidoException("El cuerpo no es un JSON valido para " + tipo.getSimpleName(), ex);
+            throw new PayloadInvalidoException("El cuerpo no es un JSON válido para " + tipo.getSimpleName(), ex);
         }
         if (payload == null) {
-            throw new PayloadInvalidoException("El cuerpo esta vacio");
+            throw new PayloadInvalidoException("El cuerpo está vacío");
         }
         Set<ConstraintViolation<T>> violaciones = validator.validate(payload);
         if (!violaciones.isEmpty()) {
-            throw new PayloadInvalidoException("Campos invalidos en " + tipo.getSimpleName() + ": " + violaciones);
+            throw new PayloadInvalidoException("Campos inválidos en " + tipo.getSimpleName() + ": " + violaciones);
         }
         return payload;
     }

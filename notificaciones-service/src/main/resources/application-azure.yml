@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: ${NOTIFICACIONES_DB_URL}
+    username: ${NOTIFICACIONES_DB_USERNAME}
+    password: ${NOTIFICACIONES_DB_PASSWORD}
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    hikari:
+      maximum-pool-size: 5
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: notificaciones

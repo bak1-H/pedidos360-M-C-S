@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: notificaciones-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:azure}
+  jpa:
+    open-in-view: false
   rabbitmq:
     host: ${SPRING_RABBITMQ_HOST:localhost}
     port: ${SPRING_RABBITMQ_PORT:5672}
@@ -20,7 +24,6 @@ spring:
         prefetch: 10
 
 rabbitmq:
-  parked-confirm-timeout: 5s
   exchange: pedidos360.eventos
   dead-letter-exchange: pedidos360.eventos.dlx
   pedido-creado:
@@ -28,28 +31,9 @@ rabbitmq:
     routing-key: pedido.creado
     dead-letter-queue: notificaciones.pedido.creado.dlq
     dead-letter-routing-key: notificaciones.pedido.creado.dlq
-    parked-queue: notificaciones.pedido.creado.dlq.parked
-  envio-asignado:
-    queue: notificaciones.envio.asignado
-    routing-key: envio.asignado
-    dead-letter-queue: notificaciones.envio.asignado.dlq
-    dead-letter-routing-key: notificaciones.envio.asignado.dlq
-    parked-queue: notificaciones.envio.asignado.dlq.parked
-  usuario-creado:
-    queue: notificaciones.usuario.creado
-    routing-key: usuario.creado
-    dead-letter-queue: notificaciones.usuario.creado.dlq
-    dead-letter-routing-key: notificaciones.usuario.creado.dlq
-    parked-queue: notificaciones.usuario.creado.dlq.parked
-  envio-entregado:
-    queue: tickets.envio.entregado
-    routing-key: envio.entregado
-    dead-letter-queue: tickets.envio.entregado.dlq
-    dead-letter-routing-key: tickets.envio.entregado.dlq
-    parked-queue: tickets.envio.entregado.dlq.parked
 
-tickets:
-  output-dir: ${TICKETS_OUTPUT_DIR:./tickets}
+internal:
+  token: ${INTERNAL_TOKEN}
 
 management:
   endpoints:

@@ -1,0 +1,33 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:notificaciones;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        default_schema: ""
+  rabbitmq:
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        auto-startup: false
+        acknowledge-mode: manual
+        default-requeue-rejected: false
+
+internal:
+  token: test-token
+
+rabbitmq:
+  exchange: pedidos360.eventos
+  dead-letter-exchange: pedidos360.eventos.dlx
+  pedido-creado:
+    queue: notificaciones.pedido.creado
+    routing-key: pedido.creado
+    dead-letter-queue: notificaciones.pedido.creado.dlq
+    dead-letter-routing-key: notificaciones.pedido.creado.dlq

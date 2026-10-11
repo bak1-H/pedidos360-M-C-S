@@ -6,13 +6,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record RabbitTopologyProperties(
         String exchange,
         String deadLetterExchange,
-        Canal pedidoCreado,
-        Canal envioAsignado,
-        Canal usuarioCreado,
-        Canal envioEntregado
+        Canal pedidoCreado
 ) {
 
-    public record Canal(String queue, String routingKey, String deadLetterQueue, String deadLetterRoutingKey,
-                 String parkedQueue) {
+    public record Canal(String queue, String routingKey, String deadLetterQueue, String deadLetterRoutingKey) {
     }
 }
