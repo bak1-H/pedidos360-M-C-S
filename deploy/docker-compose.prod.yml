@@ -69,10 +69,30 @@ services:
     environment:
       <<: *rabbit-env
       HA_QUEUE_PREFIXES: notificaciones|tickets|pedidos
-    entrypoint: ["sh", "/rabbit-join.sh"]
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        : "$${HA_QUEUE_PREFIXES:?HA_QUEUE_PREFIXES debe estar definida}"
+        docker-entrypoint.sh rabbitmq-server &
+        server=$$!
+        trap 'kill -TERM $$server' TERM INT
+        ctl() {
+          gosu rabbitmq rabbitmqctl "$$@"
+        }
+        until ctl await_startup >/dev/null 2>&1; do
+          sleep 2
+        done
+        if ! ctl cluster_status | grep -q 'rabbit@rabbit1'; then
+          ctl stop_app
+          ctl reset
+          ctl join_cluster rabbit@rabbit1
+          ctl start_app
+        fi
+        ctl set_policy ha-all "^($${HA_QUEUE_PREFIXES})\." '{"ha-mode":"all","ha-sync-mode":"automatic"}' --apply-to queues
+        wait $$server
+        wait $$server
     volumes:
       - rabbit2data:/var/lib/rabbitmq
-      - ./rabbit-join.sh:/rabbit-join.sh:ro
     depends_on:
       rabbit1:
         condition: service_healthy
