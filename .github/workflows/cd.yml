@@ -1,0 +1,140 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cd
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-west-2
+
+jobs:
+  desplegar:
+    name: Desplegar en AWS
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Resolver recursos de AWS
+        run: |
+          if ! ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text); then
+            echo "::error::Credenciales de AWS vencidas. Actualiza los secrets AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY y AWS_SESSION_TOKEN con los de la sesion actual del laboratorio."
+            exit 1
+          fi
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters "Name=tag:Project,Values=pedidos360" "Name=instance-state-name,Values=pending,running,stopping,stopped" \
+            --query 'Reservations[0].Instances[0].InstanceId' --output text)
+          API_URL=$(aws apigatewayv2 get-apis \
+            --query "Items[?Name=='pedidos360-api'].ApiEndpoint | [0]" --output text)
+          SITE_IP=$(aws ec2 describe-addresses \
+            --filters "Name=tag:Project,Values=pedidos360" \
+            --query 'Addresses[0].PublicIp' --output text)
+          for valor in "$INSTANCE_ID" "$API_URL" "$SITE_IP"; do
+            if [ -z "$valor" ] || [ "$valor" = "None" ]; then
+              echo "::error::Falta un recurso de AWS. Ejecuta primero el aprovisionamiento inicial."
+              exit 1
+            fi
+          done
+          {
+            echo "INSTANCE_ID=$INSTANCE_ID"
+            echo "BUCKET=pedidos360-deploy-${ACCOUNT_ID}-uw2"
+            echo "API_URL=$API_URL"
+            echo "SITE_URL=https://${SITE_IP//./-}.nip.io"
+          } >> "$GITHUB_ENV"
+
+      - name: Encender la instancia si esta detenida
+        run: |
+          ESTADO=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" \
+            --query 'Reservations[0].Instances[0].State.Name' --output text)
+          if [ "$ESTADO" = "stopped" ]; then
+            aws ec2 start-instances --instance-ids "$INSTANCE_ID" >/dev/null
+          fi
+          aws ec2 wait instance-running --instance-ids "$INSTANCE_ID"
+          for intento in $(seq 1 60); do
+            PING=$(aws ssm describe-instance-information \
+              --filters "Key=InstanceIds,Values=$INSTANCE_ID" \
+              --query 'InstanceInformationList[0].PingStatus' --output text)
+            if [ "$PING" = "Online" ]; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::La instancia no quedo disponible en SSM"
+          exit 1
+
+      - name: Empaquetar y subir el codigo
+        run: |
+          tar -czf "$RUNNER_TEMP/pedidos360.tar.gz" \
+            --exclude=.git --exclude=node_modules --exclude=target --exclude=dist \
+            --exclude=.angular --exclude=.atl --exclude=frontend/.playwright-mcp \
+            --exclude='*.log' --exclude='.env*' .
+          aws s3 cp "$RUNNER_TEMP/pedidos360.tar.gz" "s3://${BUCKET}/pedidos360.tar.gz" --only-show-errors
+
+      - name: Redesplegar en la instancia
+        run: |
+          {
+            echo "BUCKET=$BUCKET"
+            echo "API_URL=$API_URL"
+            cat <<'EOF'
+          set -e
+          export AWS_DEFAULT_REGION=us-west-2 COMPOSE_PARALLEL_LIMIT=2
+          cd /opt/pedidos360
+          aws s3 cp "s3://${BUCKET}/pedidos360.tar.gz" /tmp/pedidos360.tar.gz
+          find /opt/pedidos360 -mindepth 1 -maxdepth 1 ! -name .env -exec rm -rf {} +
+          tar -xzf /tmp/pedidos360.tar.gz -C /opt/pedidos360
+          grep -q '^RABBITMQ_ERLANG_COOKIE=' .env || echo "RABBITMQ_ERLANG_COOKIE=$(openssl rand -hex 24)" >> .env
+          grep -v '^API_BASE_URL=' .env > .env.next
+          echo "API_BASE_URL=${API_URL}" >> .env.next
+          chmod 600 .env.next
+          mv .env.next .env
+          COMPOSE="docker compose --env-file .env -f deploy/docker-compose.prod.yml"
+          $COMPOSE up -d --build --remove-orphans || { sleep 60; $COMPOSE up -d --remove-orphans; }
+          EOF
+          } > "$RUNNER_TEMP/remoto.sh"
+          ENCODED=$(base64 -w0 "$RUNNER_TEMP/remoto.sh")
+          COMMAND_ID=$(aws ssm send-command --instance-ids "$INSTANCE_ID" \
+            --document-name AWS-RunShellScript --timeout-seconds 1800 \
+            --parameters "commands=[\"echo ${ENCODED} | base64 -d | bash 2>&1\"]" \
+            --query Command.CommandId --output text)
+          for intento in $(seq 1 360); do
+            ESTADO=$(aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" \
+              --query Status --output text 2>/dev/null || echo Pending)
+            case "$ESTADO" in Success|Failed|Cancelled|TimedOut) break ;; esac
+            sleep 5
+          done
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" \
+            --query StandardOutputContent --output text | tail -n 40
+          test "$ESTADO" = "Success"
+
+      - name: Verificar que el sitio responde
+        run: |
+          for intento in $(seq 1 30); do
+            if curl -sf -m 10 -o /dev/null "$SITE_URL"; then
+              echo "Sitio arriba: $SITE_URL"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::El sitio no respondio tras el despliegue"
+          exit 1
