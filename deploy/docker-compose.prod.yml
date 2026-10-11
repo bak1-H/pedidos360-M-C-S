@@ -1,0 +1,202 @@
+x-spring: &spring
+  restart: unless-stopped
+  mem_limit: 640m
+  depends_on: &spring-deps
+    rabbit1:
+      condition: service_healthy
+    rabbit2:
+      condition: service_healthy
+
+x-spring-env: &spring-env
+  SPRING_PROFILES_ACTIVE: aws
+  JAVA_TOOL_OPTIONS: -Xmx384m -Xss512k
+  INTERNAL_TOKEN: ${INTERNAL_TOKEN}
+  SPRING_RABBITMQ_ADDRESSES: rabbit1:5672,rabbit2:5672
+  SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER}
+  SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+
+x-db-env: &db-env
+  DB_URL: jdbc:postgresql://postgres:5432/pedidos360
+  DB_USERNAME: ${POSTGRES_USER}
+  DB_PASSWORD: ${POSTGRES_PASSWORD}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    mem_limit: 512m
+    environment:
+      POSTGRES_DB: pedidos360
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    command: ["postgres", "-c", "shared_buffers=128MB", "-c", "max_connections=60"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d pedidos360"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  rabbit1:
+    image: rabbitmq:3.13-management
+    container_name: rabbit1
+    hostname: rabbit1
+    restart: unless-stopped
+    mem_limit: 512m
+    environment: &rabbit-env
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: -setcookie ${RABBITMQ_ERLANG_COOKIE}
+      RABBITMQ_CTL_ERL_ARGS: -setcookie ${RABBITMQ_ERLANG_COOKIE}
+    ports:
+      - "15672:15672"
+    volumes:
+      - rabbit1data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  rabbit2:
+    image: rabbitmq:3.13-management
+    container_name: rabbit2
+    hostname: rabbit2
+    restart: unless-stopped
+    mem_limit: 512m
+    environment:
+      <<: *rabbit-env
+      HA_QUEUE_PREFIXES: notificaciones|tickets|pedidos
+    entrypoint: ["sh", "/rabbit-join.sh"]
+    volumes:
+      - rabbit2data:/var/lib/rabbitmq
+      - ./rabbit-join.sh:/rabbit-join.sh:ro
+    depends_on:
+      rabbit1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q check_running && rabbitmqctl cluster_status | grep -q rabbit@rabbit1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 40s
+
+  usuarios-service:
+    <<: *spring
+    build:
+      context: ..
+      dockerfile: usuarios-service/Dockerfile
+    environment:
+      <<: [*spring-env, *db-env]
+    depends_on:
+      <<: *spring-deps
+      postgres:
+        condition: service_healthy
+
+  pedidos-service:
+    <<: *spring
+    build:
+      context: ..
+      dockerfile: pedidos-service/Dockerfile
+    environment:
+      <<: [*spring-env, *db-env]
+    depends_on:
+      <<: *spring-deps
+      postgres:
+        condition: service_healthy
+
+  envios-service:
+    <<: *spring
+    build:
+      context: ..
+      dockerfile: envios-service/Dockerfile
+    environment:
+      <<: [*spring-env, *db-env]
+    depends_on:
+      <<: *spring-deps
+      postgres:
+        condition: service_healthy
+
+  notificaciones-service:
+    <<: *spring
+    build:
+      context: ..
+      dockerfile: notificaciones-service/Dockerfile
+    environment:
+      <<: [*spring-env, *db-env]
+      TICKETS_OUTPUT_DIR: /app/tickets
+    volumes:
+      - tickets:/app/tickets
+    depends_on:
+      <<: *spring-deps
+      postgres:
+        condition: service_healthy
+
+  rabbit-admin-service:
+    <<: *spring
+    build:
+      context: ..
+      dockerfile: rabbit-admin-service/Dockerfile
+    environment:
+      <<: *spring-env
+
+  bff:
+    restart: unless-stopped
+    mem_limit: 640m
+    build:
+      context: ..
+      dockerfile: bff/Dockerfile
+    environment:
+      JAVA_TOOL_OPTIONS: -Xmx384m -Xss512k
+      AZURE_TENANT_ID: ${AZURE_TENANT_ID}
+      AZURE_API_CLIENT_ID: ${AZURE_API_CLIENT_ID}
+      USUARIOS_SERVICE_URL: http://usuarios-service:8081
+      PEDIDOS_SERVICE_URL: http://pedidos-service:8082
+      ENVIOS_SERVICE_URL: http://envios-service:8083
+      RABBIT_ADMIN_SERVICE_URL: http://rabbit-admin-service:8085
+      NOTIFICACIONES_SERVICE_URL: http://notificaciones-service:8084
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN}
+      CORS_ORIGINS: https://${SITE_HOST}
+    depends_on:
+      - usuarios-service
+      - pedidos-service
+      - envios-service
+      - rabbit-admin-service
+      - notificaciones-service
+
+  frontend:
+    restart: unless-stopped
+    mem_limit: 64m
+    build:
+      context: ..
+      dockerfile: deploy/frontend.Dockerfile
+      args:
+        SITE_HOST: ${SITE_HOST}
+        API_BASE_URL: ${API_BASE_URL}
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    mem_limit: 128m
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_HOST: ${SITE_HOST}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    depends_on:
+      - bff
+      - frontend
+
+volumes:
+  pgdata:
+  rabbit1data:
+  rabbit2data:
+  tickets:
+  caddydata:
+  caddyconfig:

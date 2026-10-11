@@ -20,13 +20,6 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: dev
       INTERNAL_TOKEN: dev-local-token
-      SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_RABBITMQ_PORT: 5672
-      SPRING_RABBITMQ_USERNAME: guest
-      SPRING_RABBITMQ_PASSWORD: guest
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
 
   pedidos-service:
     build:
@@ -70,6 +63,7 @@ services:
       - "8084:8084"
     environment:
       SPRING_PROFILES_ACTIVE: dev
+      INTERNAL_TOKEN: dev-local-token
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_PORT: 5672
       SPRING_RABBITMQ_USERNAME: guest
@@ -111,6 +105,7 @@ services:
       PEDIDOS_SERVICE_URL: http://pedidos-service:8082
       ENVIOS_SERVICE_URL: http://envios-service:8083
       RABBIT_ADMIN_SERVICE_URL: http://rabbit-admin-service:8085
+      NOTIFICACIONES_SERVICE_URL: http://notificaciones-service:8084
       INTERNAL_TOKEN: dev-local-token
       CORS_ORIGINS: http://localhost:4200
     depends_on:
@@ -118,6 +113,7 @@ services:
       - pedidos-service
       - envios-service
       - rabbit-admin-service
+      - notificaciones-service
 
   frontend:
     build:
