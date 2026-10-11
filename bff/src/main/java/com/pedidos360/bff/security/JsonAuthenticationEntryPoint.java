@@ -37,6 +37,6 @@ public class JsonAuthenticationEntryPoint implements AuthenticationEntryPoint {
         objectMapper.writeValue(
                 response.getWriter(),
                 ErrorResponse.de(401, "NO_AUTENTICADO",
-                        "Token ausente, invalido o expirado", request.getRequestURI()));
+                        "Token ausente, inválido o expirado", request.getRequestURI()));
     }
 }

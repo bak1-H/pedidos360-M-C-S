@@ -46,6 +46,18 @@ public class WebClientConfig {
     }
 
     @Bean
+    public WebClient notificacionesWebClient(
+            WebClient.Builder builder,
+            @Value("${servicios.notificaciones-url}") String notificacionesUrl,
+            @Value("${servicios.internal-token}") String internalToken) {
+
+        return builder
+                .baseUrl(notificacionesUrl)
+                .defaultHeader("X-Internal-Token", internalToken)
+                .build();
+    }
+
+    @Bean
     public WebClient rabbitAdminWebClient(
             WebClient.Builder builder,
             @Value("${servicios.rabbit-admin-url}") String rabbitAdminUrl,

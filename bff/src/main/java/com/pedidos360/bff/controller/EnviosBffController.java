@@ -1,11 +1,13 @@
 package com.pedidos360.bff.controller;
 
 import com.pedidos360.bff.client.EnviosClient;
+import com.pedidos360.bff.client.PedidosClient;
 import com.pedidos360.bff.client.UsuariosClient;
 import com.pedidos360.bff.dto.CambioEstadoEnvioDto;
 import com.pedidos360.bff.dto.EnvioRequestDto;
 import com.pedidos360.bff.dto.EnvioResponseDto;
 import com.pedidos360.bff.exception.AccesoNoAutorizadoException;
+import com.pedidos360.bff.exception.PedidoNoAsignableException;
 import com.pedidos360.bff.exception.RecursoNoEncontradoException;
 import com.pedidos360.bff.security.IdentidadInterna;
 import jakarta.validation.Valid;
@@ -30,15 +32,26 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class EnviosBffController {
 
+    private static final String ESTADO_PEDIDO_ASIGNABLE = "CREADO";
+
     private final EnviosClient enviosClient;
     private final UsuariosClient usuariosClient;
+    private final PedidosClient pedidosClient;
+
+    @GetMapping
+    public List<EnvioResponseDto> listarTodos(@AuthenticationPrincipal Jwt jwt) {
+        return enviosClient.listarTodos(IdentidadInterna.desde(jwt));
+    }
 
     @PostMapping
     public ResponseEntity<EnvioResponseDto> crear(
             @Valid @RequestBody EnvioRequestDto request,
             @AuthenticationPrincipal Jwt jwt) {
 
-        EnvioResponseDto creado = enviosClient.crear(request, IdentidadInterna.desde(jwt));
+        IdentidadInterna identidad = IdentidadInterna.desde(jwt);
+        exigirPedidoAsignable(request.pedidoId(), identidad);
+
+        EnvioResponseDto creado = enviosClient.crear(request, identidad);
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 
@@ -52,15 +65,24 @@ public class EnviosBffController {
 
         if (!identidad.esAdmin()) {
             EnvioResponseDto envio = enviosClient.buscarPorId(id, identidad)
-                    .orElseThrow(() -> new RecursoNoEncontradoException("Envio no encontrado: " + id));
+                    .orElseThrow(() -> new RecursoNoEncontradoException("Envío no encontrado: " + id));
 
             UUID repartidorId = usuariosClient.resolverUsuarioInternoId(identidad);
             if (!repartidorId.equals(envio.repartidorId())) {
-                throw new AccesoNoAutorizadoException("El envio no esta asignado al repartidor autenticado");
+                throw new AccesoNoAutorizadoException("El envío no está asignado al repartidor autenticado");
             }
         }
 
         return enviosClient.cambiarEstado(id, cambio, identidad);
+    }
+
+    private void exigirPedidoAsignable(UUID pedidoId, IdentidadInterna identidad) {
+        boolean asignable = pedidosClient.buscarPorId(pedidoId, identidad)
+                .map(pedido -> ESTADO_PEDIDO_ASIGNABLE.equals(pedido.estado()))
+                .orElse(false);
+        if (!asignable) {
+            throw new PedidoNoAsignableException();
+        }
     }
 
     @GetMapping("/mios")

@@ -37,7 +37,7 @@ public class JsonAccessDeniedHandler implements AccessDeniedHandler {
         objectMapper.writeValue(
                 response.getWriter(),
                 ErrorResponse.de(403, "SIN_PERMISO",
-                        "Tu token es valido pero tu rol no permite esta operacion",
+                        "Tu token es válido pero tu rol no permite esta operación",
                         request.getRequestURI()));
     }
 }

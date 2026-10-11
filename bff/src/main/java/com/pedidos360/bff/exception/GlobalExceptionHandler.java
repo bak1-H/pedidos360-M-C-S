@@ -39,6 +39,22 @@ public class GlobalExceptionHandler {
                         "No se pudo contactar un servicio interno", request.getRequestURI()));
     }
 
+    @ExceptionHandler(EnvioRechazoException.class)
+    public ResponseEntity<ErrorResponse> envioRechazo(EnvioRechazoException ex, HttpServletRequest request) {
+
+        return ResponseEntity
+                .status(ex.getStatus())
+                .body(ErrorResponse.de(ex.getStatus(), ex.getCodigo(), ex.getMessage(), request.getRequestURI()));
+    }
+
+    @ExceptionHandler(PedidoNoAsignableException.class)
+    public ResponseEntity<ErrorResponse> pedidoNoAsignable(PedidoNoAsignableException ex, HttpServletRequest request) {
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ErrorResponse.de(409, "PEDIDO_NO_ASIGNABLE", ex.getMessage(), request.getRequestURI()));
+    }
+
     @ExceptionHandler(RabbitAdminRechazoException.class)
     public ResponseEntity<ErrorResponse> rabbitAdminRechazo(
             RabbitAdminRechazoException ex, HttpServletRequest request) {
@@ -46,6 +62,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(ex.getStatus())
                 .body(ErrorResponse.de(ex.getStatus(), "RABBIT_ADMIN_RECHAZO", ex.getMessage(), request.getRequestURI()));
+    }
+
+    @ExceptionHandler(NotificacionesRechazoException.class)
+    public ResponseEntity<ErrorResponse> notificacionesRechazo(
+            NotificacionesRechazoException ex, HttpServletRequest request) {
+
+        return ResponseEntity
+                .status(ex.getStatus())
+                .body(ErrorResponse.de(ex.getStatus(), "NOTIFICACIONES_RECHAZO", ex.getMessage(), request.getRequestURI()));
     }
 
     @ExceptionHandler(RecursoNoEncontradoException.class)

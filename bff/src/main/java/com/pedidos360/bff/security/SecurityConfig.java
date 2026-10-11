@@ -57,6 +57,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/bff/pedidos/*").authenticated()
 
                         .requestMatchers(HttpMethod.GET, "/bff/envios/mios").hasRole("REPARTIDOR")
+                        .requestMatchers(HttpMethod.GET, "/bff/envios").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/bff/envios").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/bff/envios/*/estado")
                                 .hasAnyRole("REPARTIDOR", "ADMIN")
@@ -64,6 +65,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/bff/usuarios").hasRole("ADMIN")
 
                         .requestMatchers("/bff/rabbit/**").hasRole("ADMIN")
+
+                        .requestMatchers("/bff/notificaciones/**").hasRole("ADMIN")
 
                         .requestMatchers("/bff/**").authenticated()
                         .anyRequest().denyAll())

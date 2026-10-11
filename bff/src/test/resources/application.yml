@@ -15,6 +15,7 @@ servicios:
   usuarios-url: http://localhost:9999
   pedidos-url: http://localhost:9998
   envios-url: http://localhost:9997
+  notificaciones-url: http://localhost:9995
   rabbit-admin-url: http://localhost:9996
   internal-token: token-de-prueba
 
