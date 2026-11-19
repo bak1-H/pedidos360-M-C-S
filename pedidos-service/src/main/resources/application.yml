@@ -53,6 +53,7 @@ spring:
 
 kafka:
   grupo: pedidos-tracking
+  grupo-auditoria: pedidos-auditoria
   topics:
     pedidos-eventos:
       nombre: pedidos360.pedidos.eventos

@@ -2,6 +2,7 @@ package com.pedidos360.pedidos.config;
 
 import com.pedidos360.pedidos.consumer.PayloadInvalidoException;
 import com.pedidos360.pedidos.consumer.kafka.EnvioTrackingEvento;
+import com.pedidos360.pedidos.consumer.kafka.PedidoEventoKafka;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
@@ -75,7 +76,11 @@ public class KafkaConsumerConfig {
         }
 
         private static String eventoId(Object valor) {
-            return valor instanceof EnvioTrackingEvento evento ? evento.eventoId() : "n/d";
+            return switch (valor) {
+                case EnvioTrackingEvento evento -> evento.eventoId();
+                case PedidoEventoKafka evento -> evento.eventoId();
+                case null, default -> "n/d";
+            };
         }
     }
 }
