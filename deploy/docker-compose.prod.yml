@@ -6,6 +6,12 @@ x-spring: &spring
       condition: service_healthy
     rabbit2:
       condition: service_healthy
+    kafka1:
+      condition: service_healthy
+    kafka2:
+      condition: service_healthy
+    kafka3:
+      condition: service_healthy
 
 x-spring-env: &spring-env
   SPRING_PROFILES_ACTIVE: aws
@@ -14,6 +20,58 @@ x-spring-env: &spring-env
   SPRING_RABBITMQ_ADDRESSES: rabbit1:5672,rabbit2:5672
   SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER}
   SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka1:9092,kafka2:9092,kafka3:9092
+
+x-zookeeper: &zookeeper
+  image: confluentinc/cp-zookeeper:7.6.1
+  restart: unless-stopped
+  mem_limit: 256m
+  healthcheck:
+    test: ["CMD-SHELL", "nc -z localhost 2181"]
+    interval: 10s
+    timeout: 5s
+    retries: 10
+    start_period: 15s
+
+x-zookeeper-env: &zookeeper-env
+  ZOOKEEPER_CLIENT_PORT: 2181
+  ZOOKEEPER_TICK_TIME: 2000
+  ZOOKEEPER_INIT_LIMIT: 5
+  ZOOKEEPER_SYNC_LIMIT: 2
+  ZOOKEEPER_SERVERS: zk1:2888:3888;zk2:2888:3888;zk3:2888:3888
+  KAFKA_HEAP_OPTS: -Xmx128m -Xms128m
+
+x-kafka: &kafka
+  image: confluentinc/cp-kafka:7.6.1
+  restart: unless-stopped
+  mem_limit: 512m
+  depends_on:
+    zk1:
+      condition: service_healthy
+    zk2:
+      condition: service_healthy
+    zk3:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+    interval: 15s
+    timeout: 10s
+    retries: 10
+    start_period: 60s
+
+x-kafka-env: &kafka-env
+  KAFKA_ZOOKEEPER_CONNECT: zk1:2181,zk2:2181,zk3:2181
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT
+  KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092
+  KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+  KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+  KAFKA_MIN_INSYNC_REPLICAS: 2
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+  KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+  KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+  KAFKA_HEAP_OPTS: -Xmx256m -Xms256m
 
 x-db-env: &db-env
   DB_URL: jdbc:postgresql://postgres:5432/pedidos360
@@ -53,6 +111,7 @@ services:
       - "15672:15672"
     volumes:
       - rabbit1data:/var/lib/rabbitmq
+      - ./rabbitmq-management.conf:/etc/rabbitmq/conf.d/90-management.conf:ro
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
@@ -102,6 +161,94 @@ services:
       timeout: 10s
       retries: 12
       start_period: 40s
+
+  zk1:
+    <<: *zookeeper
+    hostname: zk1
+    container_name: zk1
+    environment:
+      <<: *zookeeper-env
+      ZOOKEEPER_SERVER_ID: 1
+    volumes:
+      - zk1data:/var/lib/zookeeper/data
+      - zk1log:/var/lib/zookeeper/log
+
+  zk2:
+    <<: *zookeeper
+    hostname: zk2
+    container_name: zk2
+    environment:
+      <<: *zookeeper-env
+      ZOOKEEPER_SERVER_ID: 2
+    volumes:
+      - zk2data:/var/lib/zookeeper/data
+      - zk2log:/var/lib/zookeeper/log
+
+  zk3:
+    <<: *zookeeper
+    hostname: zk3
+    container_name: zk3
+    environment:
+      <<: *zookeeper-env
+      ZOOKEEPER_SERVER_ID: 3
+    volumes:
+      - zk3data:/var/lib/zookeeper/data
+      - zk3log:/var/lib/zookeeper/log
+
+  kafka1:
+    <<: *kafka
+    hostname: kafka1
+    container_name: kafka1
+    environment:
+      <<: *kafka-env
+      KAFKA_BROKER_ID: 1
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka1:9092
+    volumes:
+      - kafka1data:/var/lib/kafka/data
+
+  kafka2:
+    <<: *kafka
+    hostname: kafka2
+    container_name: kafka2
+    environment:
+      <<: *kafka-env
+      KAFKA_BROKER_ID: 2
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka2:9092
+    volumes:
+      - kafka2data:/var/lib/kafka/data
+
+  kafka3:
+    <<: *kafka
+    hostname: kafka3
+    container_name: kafka3
+    environment:
+      <<: *kafka-env
+      KAFKA_BROKER_ID: 3
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka3:9092
+    volumes:
+      - kafka3data:/var/lib/kafka/data
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: kafka-ui
+    restart: unless-stopped
+    mem_limit: 384m
+    environment:
+      JAVA_OPTS: -Xmx256m
+      SERVER_SERVLET_CONTEXT_PATH: /kafka-ui
+      AUTH_TYPE: LOGIN_FORM
+      SPRING_SECURITY_USER_NAME: ${KAFKA_UI_USER}
+      SPRING_SECURITY_USER_PASSWORD: ${KAFKA_UI_PASSWORD}
+      KAFKA_CLUSTERS_0_NAME: pedidos360
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka1:9092,kafka2:9092,kafka3:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zk1:2181,zk2:2181,zk3:2181
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
 
   usuarios-service:
     <<: *spring
@@ -162,6 +309,14 @@ services:
     environment:
       <<: *spring-env
 
+  kafka-admin-service:
+    <<: *spring
+    build:
+      context: ..
+      dockerfile: kafka-admin-service/Dockerfile
+    environment:
+      <<: *spring-env
+
   bff:
     restart: unless-stopped
     mem_limit: 640m
@@ -176,6 +331,7 @@ services:
       PEDIDOS_SERVICE_URL: http://pedidos-service:8082
       ENVIOS_SERVICE_URL: http://envios-service:8083
       RABBIT_ADMIN_SERVICE_URL: http://rabbit-admin-service:8085
+      KAFKA_ADMIN_SERVICE_URL: http://kafka-admin-service:8086
       NOTIFICACIONES_SERVICE_URL: http://notificaciones-service:8084
       INTERNAL_TOKEN: ${INTERNAL_TOKEN}
       CORS_ORIGINS: https://${SITE_HOST}
@@ -184,6 +340,7 @@ services:
       - pedidos-service
       - envios-service
       - rabbit-admin-service
+      - kafka-admin-service
       - notificaciones-service
 
   frontend:
@@ -212,11 +369,21 @@ services:
     depends_on:
       - bff
       - frontend
+      - kafka-ui
 
 volumes:
   pgdata:
   rabbit1data:
   rabbit2data:
+  zk1data:
+  zk1log:
+  zk2data:
+  zk2log:
+  zk3data:
+  zk3log:
+  kafka1data:
+  kafka2data:
+  kafka3data:
   tickets:
   caddydata:
   caddyconfig:

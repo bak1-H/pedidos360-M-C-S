@@ -8,12 +8,37 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:azure}
   jpa:
     open-in-view: false
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:29092,localhost:29093,localhost:29094}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 5
+      compression-type: lz4
+      properties:
+        enable.idempotence: true
+        linger.ms: 10
+        max.block.ms: 5000
+        spring.json.add.type.headers: false
   rabbitmq:
     host: ${SPRING_RABBITMQ_HOST:localhost}
     port: ${SPRING_RABBITMQ_PORT:5672}
     username: ${SPRING_RABBITMQ_USERNAME:guest}
     password: ${SPRING_RABBITMQ_PASSWORD:guest}
     connection-timeout: 3s
+
+kafka:
+  topics:
+    envios-tracking:
+      nombre: pedidos360.envios.tracking
+      particiones: 3
+      replicas: 3
+      min-insync-replicas: 2
+      cleanup-policy: compact,delete
+      retention-ms: 259200000
+      segment-ms: 3600000
+      min-compaction-lag-ms: 60000
 
 rabbitmq:
   exchange: pedidos360.eventos

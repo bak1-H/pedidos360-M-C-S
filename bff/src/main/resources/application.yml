@@ -25,6 +25,7 @@ servicios:
   envios-url: ${ENVIOS_SERVICE_URL:http://localhost:8083}
   notificaciones-url: ${NOTIFICACIONES_SERVICE_URL:http://localhost:8084}
   rabbit-admin-url: ${RABBIT_ADMIN_SERVICE_URL:http://localhost:8085}
+  kafka-admin-url: ${KAFKA_ADMIN_SERVICE_URL:http://localhost:8086}
   internal-token: ${INTERNAL_TOKEN}
 
 cors:

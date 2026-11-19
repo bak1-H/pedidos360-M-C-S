@@ -5,6 +5,14 @@
 		reverse_proxy bff:8080
 	}
 
+	handle /rabbitmq* {
+		reverse_proxy rabbit1:15672
+	}
+
+	handle /kafka-ui* {
+		reverse_proxy kafka-ui:8080
+	}
+
 	handle {
 		reverse_proxy frontend:80
 	}

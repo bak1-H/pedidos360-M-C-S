@@ -15,6 +15,7 @@ import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.amqp.rabbit.listener.api.ChannelAwareMessageListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.nio.charset.StandardCharsets;
@@ -54,6 +55,9 @@ class ListenerConEncabezadoAjenoTest {
 
     @MockitoBean
     private RabbitTemplate rabbitTemplate;
+
+    @MockitoBean
+    private KafkaTemplate<String, Object> kafkaTemplate;
 
     private ChannelAwareMessageListener listenerDe(String cola) {
         for (MessageListenerContainer contenedor : registry.getListenerContainers()) {

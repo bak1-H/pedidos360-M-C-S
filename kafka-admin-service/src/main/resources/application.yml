@@ -1,0 +1,31 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: kafka-admin-service
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:29092,localhost:29093,localhost:29094}
+    admin:
+      properties:
+        request.timeout.ms: 8000
+        default.api.timeout.ms: 10000
+
+internal:
+  token: ${INTERNAL_TOKEN}
+
+kafka-admin:
+  protegidos:
+    nombres:
+      - pedidos360.pedidos.eventos
+      - pedidos360.pedidos.eventos.DLT
+      - pedidos360.envios.tracking
+      - pedidos360.envios.tracking.DLT
+    prefijos:
+      - __
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

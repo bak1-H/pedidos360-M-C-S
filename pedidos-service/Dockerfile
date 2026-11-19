@@ -8,6 +8,7 @@ COPY pedidos-service/pom.xml pedidos-service/pom.xml
 COPY envios-service/pom.xml envios-service/pom.xml
 COPY notificaciones-service/pom.xml notificaciones-service/pom.xml
 COPY rabbit-admin-service/pom.xml rabbit-admin-service/pom.xml
+COPY kafka-admin-service/pom.xml kafka-admin-service/pom.xml
 RUN chmod +x mvnw && ./mvnw -pl pedidos-service -q dependency:go-offline
 COPY pedidos-service/src pedidos-service/src
 RUN ./mvnw -pl pedidos-service -q clean package -DskipTests

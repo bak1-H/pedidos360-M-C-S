@@ -8,6 +8,33 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:azure}
   jpa:
     open-in-view: false
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:29092,localhost:29093,localhost:29094}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 5
+      compression-type: lz4
+      properties:
+        enable.idempotence: true
+        linger.ms: 10
+        max.block.ms: 5000
+        spring.json.add.type.headers: false
+    consumer:
+      group-id: ${kafka.grupo}
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      max-poll-records: 50
+      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.trusted.packages: com.pedidos360.notificaciones.consumer.kafka
+        spring.json.use.type.headers: false
+    listener:
+      concurrency: 3
   rabbitmq:
     host: ${SPRING_RABBITMQ_HOST:localhost}
     port: ${SPRING_RABBITMQ_PORT:5672}
@@ -22,6 +49,12 @@ spring:
         acknowledge-mode: manual
         default-requeue-rejected: false
         prefetch: 10
+
+kafka:
+  grupo: notificaciones-analitica
+  topics:
+    pedidos-eventos: pedidos360.pedidos.eventos
+    envios-tracking: pedidos360.envios.tracking
 
 rabbitmq:
   exchange: pedidos360.eventos

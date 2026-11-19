@@ -8,6 +8,8 @@ import com.pedidos360.envios.exception.EnvioDuplicadoException;
 import com.pedidos360.envios.exception.TransicionInvalidaException;
 import com.pedidos360.envios.exception.ViolacionUnicidad;
 import com.pedidos360.envios.event.EnvioEstadoCambiadoEvent;
+import com.pedidos360.envios.event.EnvioTrackingEvent;
+import com.pedidos360.envios.model.EstadoEnvio;
 import com.pedidos360.envios.model.Envio;
 import com.pedidos360.envios.model.EventoEnvio;
 import com.pedidos360.envios.repository.EnvioRepository;
@@ -61,6 +63,8 @@ public class EnvioService {
         }
         eventPublisher.publishEvent(new EnvioAsignadoEvent(
                 creado.id(), creado.pedidoId(), creado.repartidorId(), creado.fechaEntregaEstimada()));
+        eventPublisher.publishEvent(new EnvioTrackingEvent(
+                creado.id(), creado.pedidoId(), creado.repartidorId(), EstadoEnvio.PENDIENTE));
         return creado;
     }
 
@@ -89,6 +93,8 @@ public class EnvioService {
 
         EnvioResponseDTO actualizado = EnvioResponseDTO.from(envioRepository.save(envio));
         publicarCambioDeEstado(actualizado, cambio);
+        eventPublisher.publishEvent(new EnvioTrackingEvent(
+                actualizado.id(), actualizado.pedidoId(), actualizado.repartidorId(), actualizado.estadoEnvio()));
         return actualizado;
     }
 

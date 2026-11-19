@@ -64,6 +64,15 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.de(ex.getStatus(), "RABBIT_ADMIN_RECHAZO", ex.getMessage(), request.getRequestURI()));
     }
 
+    @ExceptionHandler(KafkaAdminRechazoException.class)
+    public ResponseEntity<ErrorResponse> kafkaAdminRechazo(
+            KafkaAdminRechazoException ex, HttpServletRequest request) {
+
+        return ResponseEntity
+                .status(ex.getStatus())
+                .body(ErrorResponse.de(ex.getStatus(), "KAFKA_ADMIN_RECHAZO", ex.getMessage(), request.getRequestURI()));
+    }
+
     @ExceptionHandler(NotificacionesRechazoException.class)
     public ResponseEntity<ErrorResponse> notificacionesRechazo(
             NotificacionesRechazoException ex, HttpServletRequest request) {

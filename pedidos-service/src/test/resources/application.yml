@@ -9,6 +9,12 @@ spring:
     properties:
       hibernate:
         default_schema: ""
+  kafka:
+    bootstrap-servers: localhost:29092
+    admin:
+      auto-create: false
+    listener:
+      auto-startup: false
   rabbitmq:
     publisher-confirm-type: correlated
     publisher-returns: true
@@ -22,6 +28,18 @@ spring:
 
 internal:
   token: test-token
+
+kafka:
+  grupo: pedidos-tracking
+  topics:
+    pedidos-eventos:
+      nombre: pedidos360.pedidos.eventos
+      particiones: 3
+      replicas: 3
+      min-insync-replicas: 2
+      cleanup-policy: delete
+      retention-ms: 604800000
+    envios-tracking: pedidos360.envios.tracking
 
 rabbitmq:
   exchange: pedidos360.eventos

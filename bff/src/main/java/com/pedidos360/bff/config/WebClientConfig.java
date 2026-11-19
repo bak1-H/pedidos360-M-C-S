@@ -68,4 +68,16 @@ public class WebClientConfig {
                 .defaultHeader("X-Internal-Token", internalToken)
                 .build();
     }
+
+    @Bean
+    public WebClient kafkaAdminWebClient(
+            WebClient.Builder builder,
+            @Value("${servicios.kafka-admin-url}") String kafkaAdminUrl,
+            @Value("${servicios.internal-token}") String internalToken) {
+
+        return builder
+                .baseUrl(kafkaAdminUrl)
+                .defaultHeader("X-Internal-Token", internalToken)
+                .build();
+    }
 }

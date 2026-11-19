@@ -66,6 +66,8 @@ public class SecurityConfig {
 
                         .requestMatchers("/bff/rabbit/**").hasRole("ADMIN")
 
+                        .requestMatchers("/bff/kafka-admin/**").hasRole("ADMIN")
+
                         .requestMatchers("/bff/notificaciones/**").hasRole("ADMIN")
 
                         .requestMatchers("/bff/**").authenticated()

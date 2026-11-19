@@ -8,6 +8,7 @@ import com.pedidos360.pedidos.model.Paquete;
 import com.pedidos360.pedidos.model.Pedido;
 import com.pedidos360.pedidos.repository.PedidoRepository;
 import com.pedidos360.pedidos.event.PedidoCreadoEvent;
+import com.pedidos360.pedidos.event.PedidoEstadoCambiadoEvent;
 import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,6 +91,7 @@ public class PedidoService {
         if (pedido.getEstado().puedeAvanzarA(destino)) {
             pedido.setEstado(destino);
             pedidoRepository.save(pedido);
+            eventPublisher.publishEvent(new PedidoEstadoCambiadoEvent(pedido.getId(), pedido.getClienteId(), destino));
         }
     }
 
