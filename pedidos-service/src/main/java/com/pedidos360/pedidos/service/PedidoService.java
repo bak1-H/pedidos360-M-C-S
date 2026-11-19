@@ -59,7 +59,7 @@ public class PedidoService {
 
         PedidoResponseDTO creado = PedidoResponseDTO.from(pedidoRepository.save(pedido));
         eventPublisher.publishEvent(new PedidoCreadoEvent(
-                creado.id(), creado.clienteId(), creado.direccionDestino(), creado.fechaCreacion()));
+                creado.id(), creado.clienteId(), creado.direccionDestino(), creado.fechaCreacion(), creado));
         return creado;
     }
 
@@ -91,7 +91,7 @@ public class PedidoService {
         if (pedido.getEstado().puedeAvanzarA(destino)) {
             pedido.setEstado(destino);
             pedidoRepository.save(pedido);
-            eventPublisher.publishEvent(new PedidoEstadoCambiadoEvent(pedido.getId(), pedido.getClienteId(), destino));
+            eventPublisher.publishEvent(new PedidoEstadoCambiadoEvent(PedidoResponseDTO.from(pedido)));
         }
     }
 

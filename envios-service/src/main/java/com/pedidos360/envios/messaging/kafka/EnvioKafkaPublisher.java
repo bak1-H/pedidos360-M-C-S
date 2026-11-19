@@ -28,7 +28,8 @@ public class EnvioKafkaPublisher {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void alRegistrarTracking(EnvioTrackingEvent event) {
         publicar(new EnvioTrackingEvento(UUID.randomUUID().toString(), event.envioId(), event.pedidoId(),
-                event.repartidorId(), event.estado().name(), Instant.now()));
+                event.repartidorId(), event.estado().name(), Instant.now(), event.descripcion(), event.fechaAsignacion(),
+                event.fechaEntregaEstimada()));
     }
 
     private void publicar(EnvioTrackingEvento evento) {

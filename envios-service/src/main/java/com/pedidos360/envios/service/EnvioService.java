@@ -64,7 +64,8 @@ public class EnvioService {
         eventPublisher.publishEvent(new EnvioAsignadoEvent(
                 creado.id(), creado.pedidoId(), creado.repartidorId(), creado.fechaEntregaEstimada()));
         eventPublisher.publishEvent(new EnvioTrackingEvent(
-                creado.id(), creado.pedidoId(), creado.repartidorId(), EstadoEnvio.PENDIENTE));
+                creado.id(), creado.pedidoId(), creado.repartidorId(), EstadoEnvio.PENDIENTE, evento.getDescripcion(),
+                creado.fechaAsignacion(), creado.fechaEntregaEstimada()));
         return creado;
     }
 
@@ -94,7 +95,8 @@ public class EnvioService {
         EnvioResponseDTO actualizado = EnvioResponseDTO.from(envioRepository.save(envio));
         publicarCambioDeEstado(actualizado, cambio);
         eventPublisher.publishEvent(new EnvioTrackingEvent(
-                actualizado.id(), actualizado.pedidoId(), actualizado.repartidorId(), actualizado.estadoEnvio()));
+                actualizado.id(), actualizado.pedidoId(), actualizado.repartidorId(), actualizado.estadoEnvio(),
+                cambio.descripcionEvento(), actualizado.fechaAsignacion(), actualizado.fechaEntregaEstimada()));
         return actualizado;
     }
 

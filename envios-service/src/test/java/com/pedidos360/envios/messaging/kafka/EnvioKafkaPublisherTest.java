@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.core.KafkaTemplate;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -32,7 +33,8 @@ class EnvioKafkaPublisherTest {
             new KafkaTopicsProperties.Topico(TOPICO, 3, 3, 2, "compact,delete", 259200000L, 3600000L, 60000L));
 
     private final EnvioTrackingEvent event = new EnvioTrackingEvent(
-            UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), EstadoEnvio.EN_TRANSITO);
+            UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), EstadoEnvio.EN_TRANSITO, "Salio a reparto",
+            LocalDateTime.of(2026, 1, 1, 9, 0), LocalDateTime.of(2026, 1, 2, 9, 0));
 
     @Test
     void publicaElTrackingConElPedidoIdComoClave() {
@@ -48,6 +50,9 @@ class EnvioKafkaPublisherTest {
         assertThat(evento.envioId()).isEqualTo(event.envioId());
         assertThat(evento.repartidorId()).isEqualTo(event.repartidorId());
         assertThat(evento.eventoId()).isNotBlank();
+        assertThat(evento.descripcion()).isEqualTo("Salio a reparto");
+        assertThat(evento.fechaAsignacion()).isEqualTo(event.fechaAsignacion());
+        assertThat(evento.fechaEntregaEstimada()).isEqualTo(event.fechaEntregaEstimada());
     }
 
     @Test
